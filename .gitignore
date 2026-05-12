@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+output/*.mp4
+output/*.mov
+output/*.avi
+audio/*.mp3
+audio/*.wav
+.DS_Store
+Thumbs.db
