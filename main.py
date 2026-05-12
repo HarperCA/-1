@@ -2,7 +2,7 @@ from pathlib import Path
 import asyncio
 import json
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from moviepy.editor import (
     VideoClip,
     AudioFileClip,
@@ -32,14 +32,16 @@ VIDEO_W = 1920
 VIDEO_H = 1080
 FPS = 30
 
-# 当前策略：不显示画面字幕，但生成 AI 旁白，并让每张图片时长尽量匹配对应旁白。
-SHOW_SUBTITLES = False
+# 自动生成 AI 旁白 + 自动显示字幕，并让每张图片时长尽量匹配对应旁白。
+SHOW_SUBTITLES = True
 ENABLE_AUDIO = True
 VOICE_NAME = "zh-CN-XiaoxiaoNeural"
 VOICE_RATE = "-8%"
 VOICE_VOLUME = "+0%"
 MIN_IMAGE_DURATION = 3.5
 VOICE_PADDING = 0.45
+SUBTITLE_FONT_SIZE = 54
+FONT_CACHE = {}
 
 
 def ensure_dirs():
@@ -99,6 +101,92 @@ def resize_cover(img, target_w, target_h):
     return img.crop((left, top, left + target_w, top + target_h))
 
 
+def get_font(size=SUBTITLE_FONT_SIZE):
+    """加载中文字体。Windows 优先使用微软雅黑/黑体。"""
+    if size in FONT_CACHE:
+        return FONT_CACHE[size]
+
+    font_paths = [
+        "C:/Windows/Fonts/msyh.ttc",
+        "C:/Windows/Fonts/simhei.ttf",
+        "C:/Windows/Fonts/simsun.ttc",
+        "/System/Library/Fonts/PingFang.ttc",
+        "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+    ]
+
+    for path in font_paths:
+        if Path(path).exists():
+            FONT_CACHE[size] = ImageFont.truetype(path, size)
+            return FONT_CACHE[size]
+
+    FONT_CACHE[size] = ImageFont.load_default()
+    return FONT_CACHE[size]
+
+
+def split_text_lines(draw, text, font, max_width):
+    """按宽度把中文字幕自动换行。"""
+    lines = []
+    current = ""
+
+    for char in text:
+        test = current + char
+        bbox = draw.textbbox((0, 0), test, font=font)
+        test_w = bbox[2] - bbox[0]
+        if test_w <= max_width:
+            current = test
+        else:
+            if current:
+                lines.append(current)
+            current = char
+
+    if current:
+        lines.append(current)
+
+    return lines[:3]
+
+
+def make_subtitle_layer(text):
+    """预生成字幕透明图层，避免每一帧重复排版。"""
+    if not SHOW_SUBTITLES or not text or not text.strip():
+        return None
+
+    layer = Image.new("RGBA", (VIDEO_W, VIDEO_H), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    font = get_font(SUBTITLE_FONT_SIZE)
+
+    max_width = int(VIDEO_W * 0.78)
+    lines = split_text_lines(draw, text.strip(), font, max_width)
+
+    line_height = 72
+    padding_x = 42
+    padding_y = 26
+    box_w = int(VIDEO_W * 0.82)
+    box_h = len(lines) * line_height + padding_y * 2
+    box_x = (VIDEO_W - box_w) // 2
+    box_y = VIDEO_H - box_h - 92
+
+    draw.rounded_rectangle(
+        (box_x, box_y, box_x + box_w, box_y + box_h),
+        radius=30,
+        fill=(0, 0, 0, 118)
+    )
+
+    y = box_y + padding_y
+    for line in lines:
+        bbox = draw.textbbox((0, 0), line, font=font)
+        text_w = bbox[2] - bbox[0]
+        x = (VIDEO_W - text_w) // 2
+
+        # 轻描边，提高字幕可读性。
+        for dx, dy in [(-3, 0), (3, 0), (0, -3), (0, 3), (-2, -2), (2, 2)]:
+            draw.text((x + dx, y + dy), line, font=font, fill=(0, 0, 0, 230))
+        draw.text((x, y), line, font=font, fill=(255, 255, 255, 255))
+        y += line_height
+
+    return layer
+
+
 def split_voiceover_lines(data, image_count):
     """把旁白拆成多句，尽量做到一张图对应一句旁白。"""
     voiceover_text = data.get("voiceover", "").strip()
@@ -111,6 +199,26 @@ def split_voiceover_lines(data, image_count):
 
     if not lines:
         return []
+
+    if len(lines) < image_count:
+        lines.extend([""] * (image_count - len(lines)))
+
+    if len(lines) > image_count:
+        kept = lines[:image_count - 1]
+        kept.append(" ".join(lines[image_count - 1:]))
+        lines = kept
+
+    return lines
+
+
+def get_subtitle_lines(data, voice_lines, image_count):
+    """优先使用 subtitles；没有字幕时，自动用旁白作为字幕。"""
+    subtitles = [line.strip() for line in data.get("subtitles", []) if line.strip()]
+
+    if subtitles:
+        lines = subtitles
+    else:
+        lines = voice_lines[:]
 
     if len(lines) < image_count:
         lines.extend([""] * (image_count - len(lines)))
@@ -168,10 +276,11 @@ def get_audio_durations(segment_paths, fallback_duration):
     return durations, audio_clips
 
 
-def make_clip(image_path, duration, mode):
-    """把单张图片做成带运镜的视频片段。"""
+def make_clip(image_path, duration, mode, subtitle_text=""):
+    """把单张图片做成带运镜、可选字幕的视频片段。"""
     original = Image.open(image_path).convert("RGB")
     base = resize_cover(original, VIDEO_W, VIDEO_H)
+    subtitle_layer = make_subtitle_layer(subtitle_text)
 
     def make_frame(t):
         progress = max(0, min(t / duration, 1))
@@ -212,25 +321,26 @@ def make_clip(image_path, duration, mode):
         top = max(0, min(top, new_h - VIDEO_H))
 
         frame = frame.crop((left, top, left + VIDEO_W, top + VIDEO_H))
+        if subtitle_layer:
+            frame = Image.alpha_composite(frame.convert("RGBA"), subtitle_layer).convert("RGB")
         return np.array(frame)
 
     return VideoClip(make_frame, duration=duration).set_fps(FPS)
 
 
 def build_aligned_voice_track(audio_clips, durations):
-    """把每句旁白按对应图片时长拼接，保证换图和换句尽量同步。"""
+    """把每句旁白按对应图片时长放到时间线上，保证换图和换句尽量同步。"""
     segment_timeline = []
+    current_time = 0
 
     for audio_clip, duration in zip(audio_clips, durations):
-        if audio_clip is None:
-            continue
-        audio_clip = audio_clip.volumex(1.1).set_start(sum(durations[:len(segment_timeline)]))
-        segment_timeline.append(audio_clip)
+        if audio_clip is not None:
+            segment_timeline.append(audio_clip.volumex(1.1).set_start(current_time))
+        current_time += duration
 
     if not segment_timeline:
         return None
 
-    # 用 CompositeAudioClip 保留每段之间的自然空白。
     return CompositeAudioClip(segment_timeline).set_duration(sum(durations))
 
 
@@ -272,8 +382,10 @@ def main():
 
     print(f"发现 {len(image_files)} 张图片。")
     print(f"视频尺寸：{VIDEO_W}x{VIDEO_H}，横屏 16:9。")
+    print("当前输出设置：自动 AI 朗读 + 自动字幕。")
 
     voice_lines = split_voiceover_lines(data, len(image_files))
+    subtitle_lines = get_subtitle_lines(data, voice_lines, len(image_files))
     segment_paths = []
     audio_clips = []
     durations = [fallback_duration] * len(image_files)
@@ -288,7 +400,7 @@ def main():
                 joined_audio.write_audiofile(str(VOICE_FILE), fps=44100)
             print("已根据每句旁白时长自动调整每张图片的停留时间。")
         except Exception as exc:
-            print(f"AI 旁白生成失败，将使用默认每张图片 {fallback_duration} 秒。原因：{exc}")
+            print(f"AI 旁白生成失败，将使用默认每张图片 {fallback_duration} 秒，并继续导出带字幕视频。原因：{exc}")
             durations = [fallback_duration] * len(image_files)
             audio_clips = []
 
@@ -307,8 +419,9 @@ def main():
     for index, image_path in enumerate(image_files):
         mode = modes[index % len(modes)]
         duration = durations[index]
-        print(f"正在处理：{image_path.name}，运镜：{mode}，时长：{duration:.2f} 秒")
-        clips.append(make_clip(image_path, duration, mode))
+        subtitle = subtitle_lines[index] if index < len(subtitle_lines) else ""
+        print(f"正在处理：{image_path.name}，运镜：{mode}，时长：{duration:.2f} 秒，字幕：{subtitle}")
+        clips.append(make_clip(image_path, duration, mode, subtitle))
 
     final_video = concatenate_videoclips(clips, method="compose")
     video_duration = final_video.duration
