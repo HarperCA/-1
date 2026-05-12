@@ -18,9 +18,9 @@ OUTPUT_FILE = OUTPUT_DIR / "final.mp4"
 SCRIPT_FILE = BASE_DIR / "script.json"
 VOICE_FILE = AUDIO_DIR / "voice.mp3"
 
-# 竖屏：1080 x 1920；横屏 16:9 可改成 1920 x 1080
-VIDEO_W = 1080
-VIDEO_H = 1920
+# 横屏 16:9：1920 x 1080
+VIDEO_W = 1920
+VIDEO_H = 1080
 FPS = 30
 
 # edge-tts 中文声音，可改成 zh-CN-YunxiNeural 男声
@@ -83,7 +83,7 @@ def add_subtitle(frame, text):
 
     line_height = 72
     total_height = len(lines) * line_height
-    y = VIDEO_H - 300 - total_height // 2
+    y = VIDEO_H - 190 - total_height // 2
 
     for line in lines:
         bbox = draw.textbbox((0, 0), line, font=font)
