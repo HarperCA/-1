@@ -66,6 +66,24 @@ def read_prompt_output():
     return ""
 
 
+def image_path_from_name(filename):
+    """根据文件名获取 images 目录下的安全图片路径，防止误删目录外文件。"""
+    if not filename:
+        return None
+
+    filename = Path(filename).name
+    suffix = Path(filename).suffix.lower()
+    if suffix not in ALLOWED_IMAGE_EXTS:
+        return None
+
+    image_dir = IMAGE_DIR.resolve()
+    image_path = (IMAGE_DIR / filename).resolve()
+    if image_path.parent != image_dir:
+        return None
+
+    return image_path
+
+
 def scene_detail(destination, scene_name):
     name = scene_name.strip()
 
@@ -218,6 +236,35 @@ def upload():
         saved += 1
 
     flash(f"已上传 {saved} 张图片。")
+    return redirect(url_for("index"))
+
+
+@app.route("/delete_image", methods=["POST"])
+def delete_image():
+    ensure_dirs()
+    filename = request.form.get("filename", "")
+    image_path = image_path_from_name(filename)
+
+    if image_path and image_path.exists():
+        image_path.unlink()
+        flash(f"已删除图片：{image_path.name}")
+    else:
+        flash("删除失败：没有找到这张图片。")
+
+    return redirect(url_for("index"))
+
+
+@app.route("/clear_images", methods=["POST"])
+def clear_images():
+    ensure_dirs()
+    deleted = 0
+
+    for image_file in IMAGE_DIR.iterdir():
+        if image_file.suffix.lower() in ALLOWED_IMAGE_EXTS:
+            image_file.unlink()
+            deleted += 1
+
+    flash(f"已清空图片，共删除 {deleted} 张。")
     return redirect(url_for("index"))
 
 
