@@ -6,173 +6,39 @@
   <title>AI旅游伪视频生成器</title>
   <style>
     * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Arial, "Microsoft YaHei", sans-serif;
-      background: #f4f7fb;
-      color: #1f2328;
-    }
-    .container {
-      max-width: 1180px;
-      margin: 0 auto;
-      padding: 28px 18px 40px;
-    }
-    h1 {
-      margin: 0 0 8px;
-      font-size: 32px;
-    }
-    .topbar {
-      background: linear-gradient(135deg, #12213a, #224a7a);
-      color: white;
-      border-radius: 18px;
-      padding: 26px 24px;
-      margin-bottom: 22px;
-      box-shadow: 0 10px 28px rgba(18,33,58,.18);
-    }
-    .topbar p {
-      margin: 0;
-      color: rgba(255,255,255,.92);
-      line-height: 1.8;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 18px;
-      margin-bottom: 18px;
-    }
-    .two-col {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-    }
-    .card {
-      background: white;
-      border-radius: 16px;
-      padding: 22px;
-      box-shadow: 0 6px 18px rgba(18,33,58,.06);
-      margin-bottom: 18px;
-    }
-    .card h2 {
-      margin: 0 0 10px;
-      font-size: 22px;
-    }
-    label {
-      display: block;
-      margin: 12px 0 8px;
-      font-weight: 700;
-    }
-    input[type="text"], input[type="number"], textarea {
-      width: 100%;
-      border: 1px solid #d8dee7;
-      border-radius: 12px;
-      padding: 12px 14px;
-      font-size: 15px;
-      background: #fff;
-      outline: none;
-    }
-    textarea {
-      min-height: 120px;
-      resize: vertical;
-      line-height: 1.7;
-    }
-    input[type="file"] {
-      width: 100%;
-      border: 1px dashed #c4cfdd;
-      padding: 14px;
-      border-radius: 12px;
-      background: #fbfcfe;
-    }
-    button, .btn {
-      display: inline-block;
-      border: 0;
-      background: #0f62fe;
-      color: white;
-      padding: 11px 18px;
-      border-radius: 12px;
-      font-size: 15px;
-      cursor: pointer;
-      text-decoration: none;
-      margin-top: 14px;
-      margin-right: 10px;
-    }
+    body { margin: 0; font-family: Arial, "Microsoft YaHei", sans-serif; background: #f4f7fb; color: #1f2328; }
+    .container { max-width: 1180px; margin: 0 auto; padding: 28px 18px 40px; }
+    h1 { margin: 0 0 8px; font-size: 32px; }
+    .topbar { background: linear-gradient(135deg, #12213a, #224a7a); color: white; border-radius: 18px; padding: 26px 24px; margin-bottom: 22px; box-shadow: 0 10px 28px rgba(18,33,58,.18); }
+    .topbar p { margin: 0; color: rgba(255,255,255,.92); line-height: 1.8; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .card { background: white; border-radius: 16px; padding: 22px; box-shadow: 0 6px 18px rgba(18,33,58,.06); margin-bottom: 18px; }
+    .card h2 { margin: 0 0 10px; font-size: 22px; }
+    label { display: block; margin: 12px 0 8px; font-weight: 700; }
+    input[type="text"], input[type="number"], textarea, select { width: 100%; border: 1px solid #d8dee7; border-radius: 12px; padding: 12px 14px; font-size: 15px; background: #fff; outline: none; }
+    textarea { min-height: 120px; resize: vertical; line-height: 1.7; }
+    input[type="file"] { width: 100%; border: 1px dashed #c4cfdd; padding: 14px; border-radius: 12px; background: #fbfcfe; }
+    button, .btn { display: inline-block; border: 0; background: #0f62fe; color: white; padding: 11px 18px; border-radius: 12px; font-size: 15px; cursor: pointer; text-decoration: none; margin-top: 14px; margin-right: 10px; }
     button.secondary, .btn.secondary { background: #5d6b7a; }
     button.green, .btn.green { background: #138a5b; }
     button.danger, .btn.danger { background: #c93535; }
-    button.mini {
-      padding: 6px 10px;
-      border-radius: 9px;
-      font-size: 13px;
-      margin-top: 0;
-      margin-right: 0;
-    }
-    .messages {
-      background: #fff7d7;
-      border: 1px solid #f0dc88;
-      padding: 12px 14px;
-      border-radius: 12px;
-      margin-bottom: 18px;
-      white-space: pre-wrap;
-      line-height: 1.7;
-    }
-    .status {
-      display: inline-block;
-      padding: 6px 12px;
-      border-radius: 999px;
-      font-size: 13px;
-      margin-right: 8px;
-      margin-top: 8px;
-    }
+    button.orange, .btn.orange { background: #c76a16; }
+    button.mini { padding: 6px 10px; border-radius: 9px; font-size: 13px; margin-top: 0; margin-right: 0; }
+    .messages { background: #fff7d7; border: 1px solid #f0dc88; padding: 12px 14px; border-radius: 12px; margin-bottom: 18px; white-space: pre-wrap; line-height: 1.7; }
+    .status { display: inline-block; padding: 6px 12px; border-radius: 999px; font-size: 13px; margin-right: 8px; margin-top: 8px; }
     .status.ok { background: #e8f7ef; color: #177245; }
     .status.gray { background: #eef2f6; color: #586271; }
-    .small {
-      color: #6c7683;
-      font-size: 13px;
-      line-height: 1.8;
-    }
-    ul {
-      line-height: 1.9;
-      margin: 10px 0 0;
-      padding-left: 0;
-      list-style: none;
-    }
-    .file-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 8px 0;
-      border-bottom: 1px solid #eef2f6;
-    }
-    .file-name {
-      overflow-wrap: anywhere;
-      color: #1f2937;
-    }
-    .inline-form {
-      margin: 0;
-      flex-shrink: 0;
-    }
-    code {
-      background: #edf2f8;
-      padding: 2px 6px;
-      border-radius: 6px;
-    }
-    .prompt-output {
-      min-height: 360px;
-      font-family: Consolas, "Courier New", monospace;
-      background: #fbfcff;
-    }
-    .footer-tip {
-      color: #6b7280;
-      font-size: 13px;
-      line-height: 1.8;
-      margin-top: 8px;
-    }
-    @media (max-width: 900px) {
-      .grid, .two-col { grid-template-columns: 1fr; }
-      .container { padding: 16px; }
-      h1 { font-size: 26px; }
-      .file-row { align-items: flex-start; flex-direction: column; }
-    }
+    .small { color: #6c7683; font-size: 13px; line-height: 1.8; }
+    ul { line-height: 1.9; margin: 10px 0 0; padding-left: 0; list-style: none; }
+    .file-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid #eef2f6; }
+    .file-name { overflow-wrap: anywhere; color: #1f2937; }
+    .inline-form { margin: 0; flex-shrink: 0; }
+    code { background: #edf2f8; padding: 2px 6px; border-radius: 6px; }
+    .prompt-output { min-height: 360px; font-family: Consolas, "Courier New", monospace; background: #fbfcff; }
+    .footer-tip { color: #6b7280; font-size: 13px; line-height: 1.8; margin-top: 8px; }
+    .helper-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px; margin: 12px 0; }
+    @media (max-width: 900px) { .grid, .two-col { grid-template-columns: 1fr; } .container { padding: 16px; } h1 { font-size: 26px; } .file-row { align-items: flex-start; flex-direction: column; } }
   </style>
   <script>
     function copyPromptText() {
@@ -189,56 +55,30 @@
   <div class="container">
     <div class="topbar">
       <h1>AI旅游伪视频生成器</h1>
-      <p>
-        图片 + 自动运镜 + 中文字幕 + AI旁白 + 背景音乐 = 慢节奏文旅伪视频。<br>
-        新增：图片提示词自动生成，可直接生成适合即梦 / 豆包 / 通义万相 / 可灵的旅游图片提示词。
-      </p>
+      <p>图片 + 自动运镜 + 中文字幕 + AI旁白 + 背景音乐 = 慢节奏文旅伪视频。<br>支持图片提示词生成、旁白字幕自动生成、AI朗读、背景音乐混音。</p>
     </div>
 
     {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <div class="messages">{% for message in messages %}{{ message }}{% if not loop.last %}\n{% endif %}{% endfor %}</div>
-      {% endif %}
+      {% if messages %}<div class="messages">{% for message in messages %}{{ message }}{% if not loop.last %}\n{% endif %}{% endfor %}</div>{% endif %}
     {% endwith %}
 
     <div class="grid">
       <div class="card">
         <h2>1. 上传图片</h2>
         <form action="/upload" method="post" enctype="multipart/form-data">
-          <label>选择多张图片，建议 8 张，16:9 横屏</label>
+          <label>选择多张图片，支持分批追加上传</label>
           <input type="file" name="images" multiple accept=".jpg,.jpeg,.png,image/jpeg,image/png">
           <button type="submit">上传图片</button>
         </form>
-
-        <div>
-          {% if image_files %}
-            <span class="status ok">已加载 {{ image_files|length }} 张图片</span>
-          {% else %}
-            <span class="status gray">当前还没有图片</span>
-          {% endif %}
-        </div>
-
+        <div>{% if image_files %}<span class="status ok">已加载 {{ image_files|length }} 张图片</span>{% else %}<span class="status gray">当前还没有图片</span>{% endif %}</div>
         <p class="small">当前图片列表：</p>
         <ul>
           {% for file in image_files %}
-            <li class="file-row">
-              <span class="file-name">{{ file }}</span>
-              <form class="inline-form" action="/delete_image" method="post" onsubmit="return confirm('确定删除这张图片吗？');">
-                <input type="hidden" name="filename" value="{{ file }}">
-                <button class="danger mini" type="submit">删除</button>
-              </form>
-            </li>
+            <li class="file-row"><span class="file-name">{{ file }}</span><form class="inline-form" action="/delete_image" method="post" onsubmit="return confirm('确定删除这张图片吗？');"><input type="hidden" name="filename" value="{{ file }}"><button class="danger mini" type="submit">删除</button></form></li>
           {% endfor %}
-          {% if not image_files %}
-            <li class="small">暂无图片</li>
-          {% endif %}
+          {% if not image_files %}<li class="small">暂无图片</li>{% endif %}
         </ul>
-
-        {% if image_files %}
-          <form action="/clear_images" method="post" onsubmit="return confirm('确定清空全部已上传图片吗？');">
-            <button class="danger" type="submit">清空全部图片</button>
-          </form>
-        {% endif %}
+        {% if image_files %}<form action="/clear_images" method="post" onsubmit="return confirm('确定清空全部已上传图片吗？');"><button class="danger" type="submit">清空全部图片</button></form>{% endif %}
       </div>
 
       <div class="card">
@@ -248,24 +88,11 @@
           <input type="file" name="bgm" accept=".mp3,audio/mpeg">
           <button type="submit">上传背景音乐</button>
         </form>
-
         <div>
-          {% if bgm_exists %}
-            <span class="status ok">背景音乐已就绪：audio/bgm.mp3</span>
-          {% else %}
-            <span class="status gray">当前没有背景音乐</span>
-          {% endif %}
-
-          {% if voice_exists %}
-            <span class="status ok">旁白文件存在：audio/voice.mp3</span>
-          {% else %}
-            <span class="status gray">旁白将在生成视频时自动创建</span>
-          {% endif %}
+          {% if bgm_exists %}<span class="status ok">背景音乐已就绪：audio/bgm.mp3</span>{% else %}<span class="status gray">当前没有背景音乐</span>{% endif %}
+          {% if voice_exists %}<span class="status ok">旁白文件存在：audio/voice.mp3</span>{% else %}<span class="status gray">旁白将在生成视频时自动创建</span>{% endif %}
         </div>
-
-        <p class="small">
-          上传后会保存为 <code>audio/bgm.mp3</code>。生成视频时会自动与 AI 旁白混音。
-        </p>
+        <p class="small">上传后会保存为 <code>audio/bgm.mp3</code>。生成视频时会自动与 AI 旁白混音。</p>
       </div>
     </div>
 
@@ -273,73 +100,73 @@
       <h2>3. 生成图片提示词</h2>
       <form action="/generate_prompts" method="post">
         <div class="two-col">
-          <div>
-            <label>目的地 / 主题</label>
-            <input type="text" name="destination" value="{{ prompt_form.destination }}">
-          </div>
-          <div>
-            <label>画幅比例</label>
-            <input type="text" name="aspect_ratio" value="{{ prompt_form.aspect_ratio }}">
-          </div>
+          <div><label>目的地 / 主题</label><input type="text" name="destination" value="{{ prompt_form.destination }}"></div>
+          <div><label>画幅比例</label><input type="text" name="aspect_ratio" value="{{ prompt_form.aspect_ratio }}"></div>
         </div>
-
-        <label>风格关键词</label>
-        <textarea name="style_keywords">{{ prompt_form.style_keywords }}</textarea>
-
-        <label>避免项 / 负面约束</label>
-        <textarea name="negative_keywords">{{ prompt_form.negative_keywords }}</textarea>
-
-        <label>镜头主题，每行一个</label>
-        <textarea name="scenes_text">{{ prompt_form.scenes_text }}</textarea>
-
+        <label>风格关键词</label><textarea name="style_keywords">{{ prompt_form.style_keywords }}</textarea>
+        <label>避免项 / 负面约束</label><textarea name="negative_keywords">{{ prompt_form.negative_keywords }}</textarea>
+        <label>镜头主题，每行一个</label><textarea name="scenes_text">{{ prompt_form.scenes_text }}</textarea>
         <button class="green" type="submit">一键生成图片提示词</button>
       </form>
-
-      <p class="footer-tip">
-        这里生成的是给图片生成工具使用的提示词，不是在本项目里直接出图。<br>
-        生成结果可以复制到即梦、豆包、通义万相、可灵等工具里生成图片。
-      </p>
+      <p class="footer-tip">这里生成的是给图片生成工具使用的提示词，不是在本项目里直接出图。</p>
     </div>
 
     <div class="card">
       <h2>4. 图片提示词结果</h2>
       <textarea id="prompt_output" class="prompt-output" readonly>{{ prompt_output }}</textarea>
-      <div>
-        <button type="button" onclick="copyPromptText()">复制提示词</button>
-      </div>
+      <div><button type="button" onclick="copyPromptText()">复制提示词</button></div>
       <p class="small">生成后也会自动保存到项目根目录的 <code>IMAGE_PROMPTS.md</code>。</p>
     </div>
 
     <div class="card">
       <h2>5. 设置字幕和旁白</h2>
-      <form action="/save" method="post">
+      <form action="/save" method="post" id="scriptForm">
         <label>视频标题</label>
         <input type="text" name="title" value="{{ data.title }}">
-
-        <label>每张图片持续秒数</label>
-        <input type="number" name="duration_per_image" value="{{ data.duration_per_image }}" min="2" max="20">
-
-        <label>字幕，每行一句，对应一张图片</label>
+        <div class="two-col">
+          <div>
+            <label>每张图片持续秒数</label>
+            <input type="number" name="duration_per_image" value="{{ data.duration_per_image }}" min="2" max="20">
+          </div>
+          <div>
+            <label>旁白语气</label>
+            <select name="voiceover_tone">
+              {% for key, item in voiceover_tones.items() %}
+                <option value="{{ key }}" {% if key == current_voiceover_tone %}selected{% endif %}>{{ item.label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <label>字幕，每行一句，对应一张图片。可留空，系统会用旁白作为字幕。</label>
         <textarea name="subtitles">{{ data.subtitles | join('\n') }}</textarea>
-
-        <label>AI旁白文本</label>
+        <label>AI旁白文本，每行一句，对应一张图片</label>
         <textarea name="voiceover">{{ data.voiceover }}</textarea>
-
         <button type="submit">保存脚本</button>
       </form>
+
+      <div class="helper-box">
+        <form action="/generate_voiceover" method="post">
+          <label>自动生成旁白语气</label>
+          <select name="voiceover_tone">
+            {% for key, item in voiceover_tones.items() %}
+              <option value="{{ key }}" {% if key == current_voiceover_tone %}selected{% endif %}>{{ item.label }}</option>
+            {% endfor %}
+          </select>
+          <input type="hidden" name="title" value="{{ data.title }}">
+          <input type="hidden" name="duration_per_image" value="{{ data.duration_per_image }}">
+          <button class="orange" type="submit">根据图片数量和播放速度自动生成旁白/字幕</button>
+        </form>
+        <p class="small">会按照当前已上传图片数量生成对应行数；并根据“每张图片持续秒数”控制每句长度，尽量让朗读时间和画面时间匹配。</p>
+      </div>
     </div>
 
     <div class="card">
       <h2>6. 生成视频</h2>
       <form action="/generate" method="post">
         <button class="green" type="submit">开始生成 final.mp4</button>
-        {% if has_output %}
-          <a class="btn secondary" href="/download">下载 final.mp4</a>
-        {% endif %}
+        {% if has_output %}<a class="btn secondary" href="/download">下载 final.mp4</a>{% endif %}
       </form>
-      <p class="small">
-        生成过程会调用 <code>main.py</code>，自动生成 <code>audio/voice.mp3</code> 与 <code>output/final.mp4</code>。
-      </p>
+      <p class="small">生成过程会调用 <code>main.py</code>，自动生成 <code>audio/voice.mp3</code> 与 <code>output/final.mp4</code>。</p>
     </div>
   </div>
 </body>
