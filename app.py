@@ -84,6 +84,18 @@ def image_path_from_name(filename):
     return image_path
 
 
+def next_image_index():
+    """获取下一张图片编号。删除过图片时不强制补位，保证不覆盖现有文件。"""
+    max_index = 0
+    for image_file in IMAGE_DIR.iterdir():
+        if image_file.suffix.lower() not in ALLOWED_IMAGE_EXTS:
+            continue
+        stem = image_file.stem
+        if stem.isdigit():
+            max_index = max(max_index, int(stem))
+    return max_index + 1
+
+
 def scene_detail(destination, scene_name):
     name = scene_name.strip()
 
@@ -210,7 +222,7 @@ def save():
         "voiceover": voiceover or "\n".join(subtitles)
     }
     save_script(data)
-    flash("脚本和字幕已保存。")
+    flash("脚本和文案已保存。")
     return redirect(url_for("index"))
 
 
@@ -219,23 +231,24 @@ def upload():
     ensure_dirs()
     files = request.files.getlist("images")
     saved = 0
+    current_index = next_image_index()
 
-    # 清空旧图片，避免混用
-    for old_file in IMAGE_DIR.iterdir():
-        if old_file.suffix.lower() in ALLOWED_IMAGE_EXTS:
-            old_file.unlink()
-
-    for index, file in enumerate(files, start=1):
+    for file in files:
         if not file or not file.filename:
             continue
         suffix = Path(file.filename).suffix.lower()
         if suffix not in ALLOWED_IMAGE_EXTS:
             continue
-        filename = f"{index:02d}{suffix}"
+
+        filename = f"{current_index:02d}{suffix}"
         file.save(IMAGE_DIR / filename)
         saved += 1
+        current_index += 1
 
-    flash(f"已上传 {saved} 张图片。")
+    if saved:
+        flash(f"已上传 {saved} 张图片。")
+    else:
+        flash("没有上传成功的图片，请选择 jpg、jpeg 或 png 文件。")
     return redirect(url_for("index"))
 
 
@@ -247,9 +260,9 @@ def delete_image():
 
     if image_path and image_path.exists():
         image_path.unlink()
-        flash(f"已删除图片：{image_path.name}")
+        flash(f"已移除图片：{image_path.name}")
     else:
-        flash("删除失败：没有找到这张图片。")
+        flash("移除失败：没有找到这张图片。")
 
     return redirect(url_for("index"))
 
@@ -264,7 +277,7 @@ def clear_images():
             image_file.unlink()
             deleted += 1
 
-    flash(f"已清空图片，共删除 {deleted} 张。")
+    flash(f"已清空图片，共移除 {deleted} 张。")
     return redirect(url_for("index"))
 
 
