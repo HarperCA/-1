@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI旅游伪视频生成器</title>
+  <style>
+    body { font-family: Arial, 'Microsoft YaHei', sans-serif; margin: 0; background: #f5f5f5; color: #222; }
+    .container { max-width: 980px; margin: 0 auto; padding: 28px; }
+    h1 { margin-bottom: 8px; }
+    .desc { color: #666; margin-bottom: 24px; }
+    .card { background: white; border-radius: 14px; padding: 22px; margin-bottom: 18px; box-shadow: 0 2px 14px rgba(0,0,0,.06); }
+    label { display: block; font-weight: 700; margin: 12px 0 8px; }
+    input[type="text"], input[type="number"], textarea { width: 100%; box-sizing: border-box; border: 1px solid #ddd; border-radius: 10px; padding: 12px; font-size: 15px; }
+    textarea { min-height: 150px; resize: vertical; line-height: 1.6; }
+    button, .btn { display: inline-block; border: 0; background: #111; color: white; padding: 11px 18px; border-radius: 10px; font-size: 15px; cursor: pointer; text-decoration: none; margin-top: 12px; }
+    button.secondary, .btn.secondary { background: #666; }
+    .messages { background: #fff7d7; border: 1px solid #f0dc88; padding: 12px; border-radius: 10px; margin-bottom: 18px; white-space: pre-wrap; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .small { color: #777; font-size: 13px; line-height: 1.6; }
+    ul { line-height: 1.8; }
+    code { background: #eee; padding: 2px 6px; border-radius: 6px; }
+    @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } .container { padding: 16px; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>AI旅游伪视频生成器</h1>
+    <div class="desc">上传图片、填写字幕和旁白，一键生成带运镜、字幕、AI旁白的视频。</div>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="messages">{% for message in messages %}{{ message }}{% if not loop.last %}\n{% endif %}{% endfor %}</div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="grid">
+      <div class="card">
+        <h2>1. 上传图片</h2>
+        <form action="/upload" method="post" enctype="multipart/form-data">
+          <label>选择多张图片，建议 8 张，16:9 横屏</label>
+          <input type="file" name="images" multiple accept=".jpg,.jpeg,.png,image/jpeg,image/png">
+          <button type="submit">上传图片</button>
+        </form>
+        <p class="small">当前图片：</p>
+        <ul>
+          {% for file in image_files %}<li>{{ file }}</li>{% endfor %}
+          {% if not image_files %}<li>暂无图片</li>{% endif %}
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>2. 上传背景音乐</h2>
+        <form action="/upload_bgm" method="post" enctype="multipart/form-data">
+          <label>选择 MP3 文件，可选</label>
+          <input type="file" name="bgm" accept=".mp3,audio/mpeg">
+          <button type="submit">上传背景音乐</button>
+        </form>
+        <p class="small">上传后会保存为 <code>audio/bgm.mp3</code>，生成视频时会自动降低音量并和旁白混合。</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>3. 设置字幕和旁白</h2>
+      <form action="/save" method="post">
+        <label>视频标题</label>
+        <input type="text" name="title" value="{{ data.title }}">
+
+        <label>每张图片持续秒数</label>
+        <input type="number" name="duration_per_image" value="{{ data.duration_per_image }}" min="2" max="20">
+
+        <label>字幕，每行一句，对应一张图片</label>
+        <textarea name="subtitles">{{ data.subtitles | join('\n') }}</textarea>
+
+        <label>AI旁白文本</label>
+        <textarea name="voiceover">{{ data.voiceover }}</textarea>
+
+        <button type="submit">保存脚本</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>4. 生成视频</h2>
+      <form action="/generate" method="post">
+        <button type="submit">开始生成 final.mp4</button>
+        {% if has_output %}
+          <a class="btn secondary" href="/download">下载 final.mp4</a>
+        {% endif %}
+      </form>
+      <p class="small">生成过程会调用 <code>main.py</code>，并自动生成 <code>audio/voice.mp3</code> 和 <code>output/final.mp4</code>。</p>
+    </div>
+  </div>
+</body>
+</html>
