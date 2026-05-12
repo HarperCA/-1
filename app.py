@@ -17,12 +17,27 @@ app = Flask(__name__)
 app.secret_key = "travel-video-generator"
 
 ALLOWED_IMAGE_EXTS = {".jpg", ".jpeg", ".png"}
+DEFAULT_SCENES = [
+    "古城清晨",
+    "西街老巷",
+    "红砖古厝",
+    "开元寺双塔",
+    "街头生活感",
+    "簪花古巷",
+    "旅人背影",
+    "傍晚收尾",
+]
 
 
 def ensure_dirs():
     IMAGE_DIR.mkdir(parents=True, exist_ok=True)
     AUDIO_DIR.mkdir(parents=True, exist_ok=True)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def get_image_files():
+    ensure_dirs()
+    return sorted([p for p in IMAGE_DIR.iterdir() if p.suffix.lower() in ALLOWED_IMAGE_EXTS])
 
 
 def load_script():
@@ -47,16 +62,7 @@ def default_prompt_form():
         "aspect_ratio": "16:9",
         "style_keywords": "真实摄影、电影感、纪录片风格、自然光、慢节奏文旅宣传片、高清、真实细节、自然色彩、干净画面、远景人物、背影、无清晰面部",
         "negative_keywords": "避免文字、避免水印、避免Logo、避免插画风、避免卡通感、避免AI感、避免乱码招牌、避免错误建筑结构、避免不自然建筑比例、避免近景人像、避免清晰面部、避免夸张肢体、避免过度滤镜",
-        "scenes_text": "\n".join([
-            "古城清晨",
-            "西街老巷",
-            "红砖古厝",
-            "开元寺双塔",
-            "街头生活感",
-            "簪花古巷",
-            "旅人背影",
-            "傍晚收尾"
-        ])
+        "scenes_text": "\n".join(DEFAULT_SCENES)
     }
 
 
@@ -94,6 +100,89 @@ def next_image_index():
         if stem.isdigit():
             max_index = max(max_index, int(stem))
     return max_index + 1
+
+
+def guess_destination(title):
+    title = (title or "").strip()
+    if "泉州" in title:
+        return "泉州古城"
+    if "古城" in title:
+        return title.replace("慢慢抵达", "").replace("慢慢走进", "").strip() or "这座古城"
+    if title:
+        cleaned = title.replace("慢慢抵达", "").replace("慢慢走进", "").replace("的一天", "").strip()
+        return cleaned or title
+    return "这座城"
+
+
+def normalize_sentence_length(text, max_chars):
+    """控制每句旁白长度，避免朗读时间明显超过单张图片播放时长。"""
+    text = text.strip()
+    if len(text) <= max_chars:
+        return text
+
+    cut_points = ["，", "。", "；", "、"]
+    for point in cut_points:
+        pos = text.rfind(point, 0, max_chars + 1)
+        if pos >= max(8, int(max_chars * 0.55)):
+            return text[:pos + 1]
+
+    return text[:max_chars].rstrip("，、；。") + "。"
+
+
+def scene_name_for_index(index, total_count):
+    """根据图片顺序给一个镜头语义，不固定 8 张。"""
+    if total_count <= 1:
+        return "城市印象"
+
+    ratio = index / max(total_count - 1, 1)
+    if index == 0:
+        return "开场"
+    if index == total_count - 1:
+        return "收尾"
+    if ratio < 0.18:
+        return "清晨"
+    if ratio < 0.34:
+        return "老巷"
+    if ratio < 0.50:
+        return "建筑"
+    if ratio < 0.66:
+        return "生活"
+    if ratio < 0.82:
+        return "旅人"
+    return "傍晚"
+
+
+def generate_voiceover_lines(title, image_count, duration_per_image):
+    """
+    根据图片数量和播放速度自动生成旁白。
+    规则：一张图片一行旁白；图片停留越短，每句越短。
+    """
+    image_count = max(1, int(image_count))
+    duration_per_image = max(2, int(duration_per_image))
+    destination = guess_destination(title)
+
+    # 中文普通朗读大约 3.5 到 4.5 字/秒；这里保守一点，避免旁白赶不上画面。
+    max_chars = max(12, min(34, int(duration_per_image * 3.8)))
+
+    templates = {
+        "开场": f"有些地方，不适合匆匆走过。",
+        "清晨": f"{destination}更适合在柔和的光里慢慢靠近。",
+        "老巷": f"老街、石板路和屋檐，把时间留在了转角处。",
+        "建筑": f"古老建筑静静伫立，像是在守望这座城的从前。",
+        "生活": f"街边小店亮起温暖的光，日常也有了旅行的味道。",
+        "旅人": f"旅人穿过安静的巷子，也把脚步放慢了一点。",
+        "傍晚": f"傍晚的光落下来，整座城变得温柔而安静。",
+        "收尾": f"离开时才发现，{destination}留下的是慢慢生活的感觉。",
+        "城市印象": f"{destination}不适合匆匆路过，更适合慢慢走，慢慢看。",
+    }
+
+    lines = []
+    for index in range(image_count):
+        scene_name = scene_name_for_index(index, image_count)
+        text = templates.get(scene_name, f"{destination}的这一刻，安静而有生活气息。")
+        lines.append(normalize_sentence_length(text, max_chars))
+
+    return lines
 
 
 def scene_detail(destination, scene_name):
@@ -223,6 +312,27 @@ def save():
     }
     save_script(data)
     flash("脚本和文案已保存。")
+    return redirect(url_for("index"))
+
+
+@app.route("/generate_voiceover", methods=["POST"])
+def generate_voiceover():
+    ensure_dirs()
+    data = load_script()
+    title = request.form.get("title", data.get("title", "慢慢抵达一座城")).strip()
+    duration = int(request.form.get("duration_per_image", data.get("duration_per_image", 6)))
+    image_count = len(get_image_files()) or 8
+
+    lines = generate_voiceover_lines(title, image_count, duration)
+    data["title"] = title
+    data["duration_per_image"] = duration
+    data["aspect_ratio"] = "16:9"
+    data["subtitles"] = lines
+    data["voiceover"] = "\n".join(lines)
+    save_script(data)
+
+    total_seconds = image_count * duration
+    flash(f"已根据 {image_count} 张图片和每张 {duration} 秒的速度，自动生成 {len(lines)} 句旁白和字幕。预计视频约 {total_seconds} 秒。")
     return redirect(url_for("index"))
 
 
