@@ -28,6 +28,99 @@ DEFAULT_SCENES = [
     "傍晚收尾",
 ]
 
+VOICEOVER_TONES = {
+    "healing": {
+        "label": "治愈文艺",
+        "speed_factor": 1.00,
+        "templates": {
+            "开场": "有些地方，不适合匆匆走过。",
+            "清晨": "{destination}更适合在柔和的光里慢慢靠近。",
+            "老巷": "老街、石板路和屋檐，把时间留在了转角处。",
+            "建筑": "古老建筑静静伫立，像是在守望这座城的从前。",
+            "生活": "街边小店亮起温暖的光，日常也有了旅行的味道。",
+            "旅人": "旅人穿过安静的巷子，也把脚步放慢了一点。",
+            "傍晚": "傍晚的光落下来，整座城变得温柔而安静。",
+            "收尾": "离开时才发现，{destination}留下的是慢慢生活的感觉。",
+            "城市印象": "{destination}不适合匆匆路过，更适合慢慢走，慢慢看。",
+        },
+    },
+    "documentary": {
+        "label": "纪录片旁白",
+        "speed_factor": 1.05,
+        "templates": {
+            "开场": "这里是{destination}，一座在时间里慢慢生长的城市。",
+            "清晨": "清晨的光照进街巷，也唤醒了古城的轮廓。",
+            "老巷": "老巷保留着生活的纹理，也记录着城市的记忆。",
+            "建筑": "古老建筑安静伫立，延续着这片土地的文脉。",
+            "生活": "街边的日常场景，构成了城市最真实的温度。",
+            "旅人": "行走其间，人们更容易感受到时间的缓慢流动。",
+            "傍晚": "当暮色落下，古城呈现出另一种沉静的面貌。",
+            "收尾": "{destination}的魅力，不在喧闹，而在日复一日的从容。",
+            "城市印象": "{destination}用安静的方式，保存着一座城的过去与现在。",
+        },
+    },
+    "xiaohongshu": {
+        "label": "小红书种草",
+        "speed_factor": 0.90,
+        "templates": {
+            "开场": "来{destination}，一定要留点时间慢慢逛。",
+            "清晨": "清晨的古城很安静，随手一拍都很有氛围。",
+            "老巷": "老街和巷子真的适合慢慢走，越逛越有味道。",
+            "建筑": "红砖、屋檐和古建筑，是这里最特别的记忆点。",
+            "生活": "街边小店和日常光影，让旅程变得很舒服。",
+            "旅人": "在这里不用赶路，放慢脚步反而更好看。",
+            "傍晚": "傍晚的光一出来，整座古城都温柔了。",
+            "收尾": "如果你也喜欢慢旅行，{destination}真的值得来。",
+            "城市印象": "{destination}很适合慢慢逛，安静又有氛围。",
+        },
+    },
+    "douyin": {
+        "label": "抖音短视频",
+        "speed_factor": 0.82,
+        "templates": {
+            "开场": "这座城，真的适合慢下来。",
+            "清晨": "清晨走进{destination}，氛围感直接拉满。",
+            "老巷": "老街一拐弯，就能遇见不一样的风景。",
+            "建筑": "红砖古厝和老建筑，是这里最特别的底色。",
+            "生活": "街边日常一亮起来，旅行感就有了。",
+            "旅人": "别走太快，慢一点才看得见这座城。",
+            "傍晚": "傍晚这一刻，真的很适合收尾。",
+            "收尾": "来{destination}，把脚步放慢一次。",
+            "城市印象": "{destination}，是一座越慢走越有味道的城。",
+        },
+    },
+    "promo": {
+        "label": "沉稳宣传片",
+        "speed_factor": 1.00,
+        "templates": {
+            "开场": "走进{destination}，感受古城文脉与城市温度。",
+            "清晨": "晨光之中，古城街巷展现出宁静而悠远的气质。",
+            "老巷": "一砖一瓦之间，承载着地方文化的独特记忆。",
+            "建筑": "历史建筑与城市生活相互映照，构成独特风貌。",
+            "生活": "真实的街巷日常，让这座城市更具亲近感。",
+            "旅人": "漫步其中，可以感受传统与当下的自然连接。",
+            "傍晚": "暮色渐起，古城呈现出温和而诗意的景象。",
+            "收尾": "{destination}，是一处值得停留、品味与再次抵达的地方。",
+            "城市印象": "{destination}，以深厚底蕴呈现独特的文旅魅力。",
+        },
+    },
+    "citywalk": {
+        "label": "城市漫游",
+        "speed_factor": 0.95,
+        "templates": {
+            "开场": "这一次，我们把脚步交给{destination}。",
+            "清晨": "从清晨开始，沿着街巷慢慢往前走。",
+            "老巷": "巷子不宽，却藏着很多值得停下来的细节。",
+            "建筑": "屋檐、墙面和光影，组成了这段漫游的节奏。",
+            "生活": "街边的日常声音，让旅程变得更真实。",
+            "旅人": "走着走着，人也跟着这座城慢了下来。",
+            "傍晚": "到了傍晚，光线把街巷染得更柔和。",
+            "收尾": "这趟漫游结束了，但{destination}的余味还在。",
+            "城市印象": "在{destination}漫游，最重要的是别走太快。",
+        },
+    },
+}
+
 
 def ensure_dirs():
     IMAGE_DIR.mkdir(parents=True, exist_ok=True)
@@ -47,6 +140,7 @@ def load_script():
         "title": "慢慢抵达泉州古城",
         "duration_per_image": 6,
         "aspect_ratio": "16:9",
+        "voiceover_tone": "healing",
         "subtitles": [],
         "voiceover": ""
     }
@@ -152,34 +246,25 @@ def scene_name_for_index(index, total_count):
     return "傍晚"
 
 
-def generate_voiceover_lines(title, image_count, duration_per_image):
+def generate_voiceover_lines(title, image_count, duration_per_image, tone="healing"):
     """
-    根据图片数量和播放速度自动生成旁白。
+    根据图片数量、播放速度和语气自动生成旁白。
     规则：一张图片一行旁白；图片停留越短，每句越短。
     """
     image_count = max(1, int(image_count))
     duration_per_image = max(2, int(duration_per_image))
     destination = guess_destination(title)
+    tone_config = VOICEOVER_TONES.get(tone, VOICEOVER_TONES["healing"])
 
-    # 中文普通朗读大约 3.5 到 4.5 字/秒；这里保守一点，避免旁白赶不上画面。
-    max_chars = max(12, min(34, int(duration_per_image * 3.8)))
-
-    templates = {
-        "开场": f"有些地方，不适合匆匆走过。",
-        "清晨": f"{destination}更适合在柔和的光里慢慢靠近。",
-        "老巷": f"老街、石板路和屋檐，把时间留在了转角处。",
-        "建筑": f"古老建筑静静伫立，像是在守望这座城的从前。",
-        "生活": f"街边小店亮起温暖的光，日常也有了旅行的味道。",
-        "旅人": f"旅人穿过安静的巷子，也把脚步放慢了一点。",
-        "傍晚": f"傍晚的光落下来，整座城变得温柔而安静。",
-        "收尾": f"离开时才发现，{destination}留下的是慢慢生活的感觉。",
-        "城市印象": f"{destination}不适合匆匆路过，更适合慢慢走，慢慢看。",
-    }
+    speed_factor = tone_config.get("speed_factor", 1.0)
+    max_chars = max(10, min(38, int(duration_per_image * 3.8 * speed_factor)))
+    templates = tone_config["templates"]
 
     lines = []
     for index in range(image_count):
         scene_name = scene_name_for_index(index, image_count)
-        text = templates.get(scene_name, f"{destination}的这一刻，安静而有生活气息。")
+        text_template = templates.get(scene_name, templates.get("城市印象", "{destination}的这一刻，安静而有生活气息。"))
+        text = text_template.format(destination=destination)
         lines.append(normalize_sentence_length(text, max_chars))
 
     return lines
@@ -285,7 +370,9 @@ def build_view_data(prompt_output=None, prompt_form=None):
         "bgm_exists": bgm_exists,
         "voice_exists": voice_exists,
         "prompt_output": prompt_output,
-        "prompt_form": prompt_form
+        "prompt_form": prompt_form,
+        "voiceover_tones": VOICEOVER_TONES,
+        "current_voiceover_tone": data.get("voiceover_tone", "healing"),
     }
 
 
@@ -301,12 +388,14 @@ def save():
     duration = int(request.form.get("duration_per_image", "6"))
     subtitles_text = request.form.get("subtitles", "").strip()
     voiceover = request.form.get("voiceover", "").strip()
+    voiceover_tone = request.form.get("voiceover_tone", "healing")
     subtitles = [line.strip() for line in subtitles_text.splitlines() if line.strip()]
 
     data = {
         "title": title,
         "duration_per_image": duration,
         "aspect_ratio": "16:9",
+        "voiceover_tone": voiceover_tone,
         "subtitles": subtitles,
         "voiceover": voiceover or "\n".join(subtitles)
     }
@@ -321,18 +410,23 @@ def generate_voiceover():
     data = load_script()
     title = request.form.get("title", data.get("title", "慢慢抵达一座城")).strip()
     duration = int(request.form.get("duration_per_image", data.get("duration_per_image", 6)))
+    voiceover_tone = request.form.get("voiceover_tone", data.get("voiceover_tone", "healing"))
+    if voiceover_tone not in VOICEOVER_TONES:
+        voiceover_tone = "healing"
     image_count = len(get_image_files()) or 8
 
-    lines = generate_voiceover_lines(title, image_count, duration)
+    lines = generate_voiceover_lines(title, image_count, duration, voiceover_tone)
     data["title"] = title
     data["duration_per_image"] = duration
     data["aspect_ratio"] = "16:9"
+    data["voiceover_tone"] = voiceover_tone
     data["subtitles"] = lines
     data["voiceover"] = "\n".join(lines)
     save_script(data)
 
     total_seconds = image_count * duration
-    flash(f"已根据 {image_count} 张图片和每张 {duration} 秒的速度，自动生成 {len(lines)} 句旁白和字幕。预计视频约 {total_seconds} 秒。")
+    tone_label = VOICEOVER_TONES[voiceover_tone]["label"]
+    flash(f"已按“{tone_label}”语气，根据 {image_count} 张图片和每张 {duration} 秒，自动生成 {len(lines)} 句旁白和字幕。预计视频约 {total_seconds} 秒。")
     return redirect(url_for("index"))
 
 
