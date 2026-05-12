@@ -97,6 +97,14 @@
     }
     button.secondary, .btn.secondary { background: #5d6b7a; }
     button.green, .btn.green { background: #138a5b; }
+    button.danger, .btn.danger { background: #c93535; }
+    button.mini {
+      padding: 6px 10px;
+      border-radius: 9px;
+      font-size: 13px;
+      margin-top: 0;
+      margin-right: 0;
+    }
     .messages {
       background: #fff7d7;
       border: 1px solid #f0dc88;
@@ -124,7 +132,24 @@
     ul {
       line-height: 1.9;
       margin: 10px 0 0;
-      padding-left: 20px;
+      padding-left: 0;
+      list-style: none;
+    }
+    .file-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid #eef2f6;
+    }
+    .file-name {
+      overflow-wrap: anywhere;
+      color: #1f2937;
+    }
+    .inline-form {
+      margin: 0;
+      flex-shrink: 0;
     }
     code {
       background: #edf2f8;
@@ -146,6 +171,7 @@
       .grid, .two-col { grid-template-columns: 1fr; }
       .container { padding: 16px; }
       h1 { font-size: 26px; }
+      .file-row { align-items: flex-start; flex-direction: column; }
     }
   </style>
   <script>
@@ -195,12 +221,24 @@
         <p class="small">当前图片列表：</p>
         <ul>
           {% for file in image_files %}
-            <li>{{ file }}</li>
+            <li class="file-row">
+              <span class="file-name">{{ file }}</span>
+              <form class="inline-form" action="/delete_image" method="post" onsubmit="return confirm('确定删除这张图片吗？');">
+                <input type="hidden" name="filename" value="{{ file }}">
+                <button class="danger mini" type="submit">删除</button>
+              </form>
+            </li>
           {% endfor %}
           {% if not image_files %}
-            <li>暂无图片</li>
+            <li class="small">暂无图片</li>
           {% endif %}
         </ul>
+
+        {% if image_files %}
+          <form action="/clear_images" method="post" onsubmit="return confirm('确定清空全部已上传图片吗？');">
+            <button class="danger" type="submit">清空全部图片</button>
+          </form>
+        {% endif %}
       </div>
 
       <div class="card">
