@@ -109,8 +109,6 @@ def build_prompt_document(destination, aspect_ratio, style_keywords, negative_ke
     lines = []
     lines.append(f"# {destination}旅游伪视频图片生成提示词｜{aspect_ratio}版")
     lines.append("")
-    lines.append("用途：用于即梦、豆包、通义万相、可灵图片等工具生成旅游短视频配图。")
-    lines.append("")
     lines.append("建议统一参数：")
     lines.append("")
     lines.append("```text")
@@ -202,7 +200,7 @@ def upload():
     files = request.files.getlist("images")
     saved = 0
 
-    # 清空旧图片，避免混用
+    # 清空旧图片，避免混用。上传后也可以在页面里单张删除或全部清空。
     for old_file in IMAGE_DIR.iterdir():
         if old_file.suffix.lower() in ALLOWED_IMAGE_EXTS:
             old_file.unlink()
@@ -221,6 +219,37 @@ def upload():
     return redirect(url_for("index"))
 
 
+@app.route("/delete_image/<filename>", methods=["POST"])
+def delete_image(filename):
+    ensure_dirs()
+    safe_name = Path(filename).name
+    image_path = IMAGE_DIR / safe_name
+
+    if image_path.suffix.lower() not in ALLOWED_IMAGE_EXTS:
+        flash("删除失败：文件类型不允许。")
+        return redirect(url_for("index"))
+
+    if image_path.exists() and image_path.is_file():
+        image_path.unlink()
+        flash(f"已删除图片：{safe_name}")
+    else:
+        flash(f"图片不存在：{safe_name}")
+
+    return redirect(url_for("index"))
+
+
+@app.route("/clear_images", methods=["POST"])
+def clear_images():
+    ensure_dirs()
+    count = 0
+    for image_path in IMAGE_DIR.iterdir():
+        if image_path.suffix.lower() in ALLOWED_IMAGE_EXTS and image_path.is_file():
+            image_path.unlink()
+            count += 1
+    flash(f"已清空 {count} 张图片。")
+    return redirect(url_for("index"))
+
+
 @app.route("/upload_bgm", methods=["POST"])
 def upload_bgm():
     ensure_dirs()
@@ -236,15 +265,16 @@ def upload_bgm():
 @app.route("/generate_prompts", methods=["POST"])
 def generate_prompts():
     ensure_dirs()
+    default_form = default_prompt_form()
     destination = request.form.get("destination", "泉州古城").strip() or "泉州古城"
     aspect_ratio = request.form.get("aspect_ratio", "16:9").strip() or "16:9"
-    style_keywords = request.form.get("style_keywords", default_prompt_form()["style_keywords"]).strip()
-    negative_keywords = request.form.get("negative_keywords", default_prompt_form()["negative_keywords"]).strip()
+    style_keywords = request.form.get("style_keywords", default_form["style_keywords"]).strip()
+    negative_keywords = request.form.get("negative_keywords", default_form["negative_keywords"]).strip()
     scenes_text = request.form.get("scenes_text", "").strip()
 
     scenes = [line.strip() for line in scenes_text.splitlines() if line.strip()]
     if not scenes:
-        scenes = [line.strip() for line in default_prompt_form()["scenes_text"].splitlines() if line.strip()]
+        scenes = [line.strip() for line in default_form["scenes_text"].splitlines() if line.strip()]
 
     prompt_output = build_prompt_document(
         destination=destination,
