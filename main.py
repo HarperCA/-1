@@ -1,8 +1,14 @@
 from pathlib import Path
+import asyncio
 import json
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from moviepy.editor import VideoClip, concatenate_videoclips, AudioFileClip, CompositeAudioClip
+
+try:
+    import edge_tts
+except ImportError:
+    edge_tts = None
 
 BASE_DIR = Path(__file__).parent
 IMAGE_DIR = BASE_DIR / "images"
@@ -10,10 +16,15 @@ AUDIO_DIR = BASE_DIR / "audio"
 OUTPUT_DIR = BASE_DIR / "output"
 OUTPUT_FILE = OUTPUT_DIR / "final.mp4"
 SCRIPT_FILE = BASE_DIR / "script.json"
+VOICE_FILE = AUDIO_DIR / "voice.mp3"
 
+# 竖屏：1080 x 1920；横屏 16:9 可改成 1920 x 1080
 VIDEO_W = 1080
 VIDEO_H = 1920
 FPS = 30
+
+# edge-tts 中文声音，可改成 zh-CN-YunxiNeural 男声
+VOICE_NAME = "zh-CN-XiaoxiaoNeural"
 
 
 def get_font(size=54):
@@ -127,6 +138,51 @@ def make_clip(image_path, subtitle, duration, mode):
     return VideoClip(make_frame, duration=duration).set_fps(FPS)
 
 
+async def generate_voiceover(text):
+    """Generate AI voiceover with edge-tts."""
+    if edge_tts is None:
+        raise ImportError("缺少 edge-tts，请先运行：pip install -r requirements.txt")
+
+    if not text.strip():
+        return None
+
+    print("正在生成 AI 旁白配音...")
+    communicate = edge_tts.Communicate(
+        text=text,
+        voice=VOICE_NAME,
+        rate="-8%",
+        volume="+0%"
+    )
+    await communicate.save(str(VOICE_FILE))
+    print(f"AI 旁白已生成：{VOICE_FILE}")
+    return VOICE_FILE
+
+
+def build_audio_track(final_video, voice_path=None):
+    """Combine voiceover and optional background music."""
+    audio_clips = []
+
+    if voice_path and Path(voice_path).exists():
+        voice = AudioFileClip(str(voice_path))
+        if voice.duration > final_video.duration:
+            voice = voice.subclip(0, final_video.duration)
+        audio_clips.append(voice.volumex(1.0))
+
+    bgm_path = AUDIO_DIR / "bgm.mp3"
+    if bgm_path.exists():
+        print("正在添加背景音乐...")
+        bgm = AudioFileClip(str(bgm_path))
+        if bgm.duration < final_video.duration:
+            bgm = bgm.loop(duration=final_video.duration)
+        else:
+            bgm = bgm.subclip(0, final_video.duration)
+        audio_clips.append(bgm.volumex(0.18 if voice_path else 0.25))
+
+    if audio_clips:
+        return CompositeAudioClip(audio_clips)
+    return None
+
+
 def main():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     IMAGE_DIR.mkdir(parents=True, exist_ok=True)
@@ -135,6 +191,7 @@ def main():
     data = json.loads(SCRIPT_FILE.read_text(encoding="utf-8"))
     image_duration = int(data.get("duration_per_image", 6))
     subtitles = data.get("subtitles", [])
+    voiceover_text = data.get("voiceover") or "\n".join(subtitles)
 
     image_files = sorted([
         p for p in IMAGE_DIR.iterdir()
@@ -154,15 +211,15 @@ def main():
 
     final_video = concatenate_videoclips(clips, method="compose")
 
-    bgm_path = AUDIO_DIR / "bgm.mp3"
-    if bgm_path.exists():
-        print("正在添加背景音乐...")
-        bgm = AudioFileClip(str(bgm_path))
-        if bgm.duration < final_video.duration:
-            bgm = bgm.loop(duration=final_video.duration)
-        else:
-            bgm = bgm.subclip(0, final_video.duration)
-        final_video = final_video.set_audio(CompositeAudioClip([bgm.volumex(0.25)]))
+    voice_path = None
+    try:
+        voice_path = asyncio.run(generate_voiceover(voiceover_text))
+    except Exception as exc:
+        print(f"AI 旁白生成失败，将继续导出无旁白视频。原因：{exc}")
+
+    audio = build_audio_track(final_video, voice_path)
+    if audio:
+        final_video = final_video.set_audio(audio)
 
     print("正在导出视频...")
     final_video.write_videofile(
