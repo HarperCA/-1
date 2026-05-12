@@ -45,14 +45,14 @@ def default_prompt_form():
     return {
         "destination": "泉州古城",
         "aspect_ratio": "16:9",
-        "style_keywords": "真实摄影、电影感、纪录片风格、自然光、慢节奏文旅宣传片、高清、真实细节、自然色彩",
-        "negative_keywords": "避免文字、避免水印、避免Logo、避免插画风、避免卡通感、避免AI感、避免乱码招牌、避免畸形建筑、避免人物脸部特写、避免过度滤镜",
+        "style_keywords": "真实摄影、电影感、纪录片风格、自然光、慢节奏文旅宣传片、高清、真实细节、自然色彩、干净画面、远景人物、背影、无清晰面部",
+        "negative_keywords": "避免文字、避免水印、避免Logo、避免插画风、避免卡通感、避免AI感、避免乱码招牌、避免错误建筑结构、避免不自然建筑比例、避免近景人像、避免清晰面部、避免夸张肢体、避免过度滤镜",
         "scenes_text": "\n".join([
             "古城清晨",
             "西街老巷",
             "红砖古厝",
             "开元寺双塔",
-            "街头烟火气",
+            "街头生活感",
             "簪花古巷",
             "旅人背影",
             "傍晚收尾"
@@ -70,19 +70,19 @@ def scene_detail(destination, scene_name):
     name = scene_name.strip()
 
     if "清晨" in name:
-        return f"清晨的{destination}真实摄影画面，老街巷铺展开来，远处有地标轮廓，晨光柔和，空气微微通透，树影落在屋檐和石板路上，安静怀旧"
+        return f"清晨的{destination}真实摄影远景，老街巷铺展开来，远处有地标轮廓，晨光柔和，空气通透，树影落在屋檐和石板路上，画面安静怀旧"
     if "西街" in name or "老巷" in name:
-        return f"{destination}老街巷真实摄影画面，传统建筑、石板路、街边小店与少量自然走过的行人，温暖自然光，生活气息真实"
+        return f"{destination}老街巷真实摄影画面，传统建筑、石板路、街边小店与远景人物自然入镜，温暖自然光，生活气息真实"
     if "红砖" in name or "古厝" in name:
-        return f"{destination}闽南红砖古厝真实摄影特写，老屋屋檐、红砖墙、石板路和斑驳墙面，阳光从巷子上方斜斜落下，墙面有岁月痕迹，安静怀旧，浅景深"
+        return f"{destination}闽南红砖古厝真实摄影，老屋屋檐、红砖墙、石板路和斑驳墙面，阳光从巷子上方斜斜落下，建筑细节真实，安静怀旧，浅景深"
     if "双塔" in name or "开元寺" in name or "寺" in name:
-        return f"{destination}开元寺双塔真实摄影，古老石塔立在寺庙庭院中，树影斑驳，香火轻烟若隐若现，画面庄重安静，有历史感"
-    if "烟火" in name or "小吃" in name or "街头" in name:
-        return f"{destination}街边小吃摊真实摄影，热汤升腾，摊位前有自然生活场景，老人聊天，游客慢慢经过，画面温暖，富有人间烟火气"
+        return f"{destination}开元寺双塔真实摄影，古老石塔立在寺庙庭院中，树影斑驳，建筑比例真实，画面庄重安静，有历史感"
+    if "生活" in name or "小吃" in name or "街头" in name:
+        return f"{destination}街头生活场景真实摄影，街边小店、传统小吃摊、自然行走的远景人物，画面温暖克制，具有城市日常感"
     if "簪花" in name:
-        return f"闽南簪花女子背影走在{destination}红砖古厝巷子里，传统簪花头饰，阳光照在红砖墙面和石板路上，画面温柔安静，有地方文化气息"
+        return f"闽南簪花人物背影走在{destination}红砖古厝巷子里，传统簪花头饰，阳光照在红砖墙面和石板路上，画面温柔安静，有地方文化气息"
     if "旅人" in name or "背影" in name:
-        return f"游客背影慢慢走过{destination}老巷，墙面斑驳，石板路上有温暖阳光，巷子安静治愈，城市漫游感明显"
+        return f"旅人背影慢慢走过{destination}老巷，墙面斑驳，石板路上有温暖阳光，巷子安静治愈，城市漫游感明显"
     if "傍晚" in name or "收尾" in name or "黄昏" in name:
         return f"傍晚的{destination}远景真实摄影，城市建筑安静铺展，天空微橙，远处光线柔和，诗意文旅宣传片结尾画面"
 
@@ -101,7 +101,8 @@ def get_orientation_text(aspect_ratio):
 def build_single_prompt(destination, scene_name, style_keywords, negative_keywords, aspect_ratio):
     detail = scene_detail(destination, scene_name)
     orientation = get_orientation_text(aspect_ratio)
-    return f"{detail}，{style_keywords}，{aspect_ratio}{orientation}，{negative_keywords}"
+    safe_people_text = "人物只作为远景或背影出现，无清晰面部"
+    return f"{detail}，{style_keywords}，{safe_people_text}，{aspect_ratio}{orientation}，{negative_keywords}"
 
 
 def build_prompt_document(destination, aspect_ratio, style_keywords, negative_keywords, scenes):
