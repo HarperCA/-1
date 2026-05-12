@@ -1,6 +1,5 @@
 from pathlib import Path
 import json
-import shutil
 import subprocess
 import sys
 
@@ -12,6 +11,7 @@ AUDIO_DIR = BASE_DIR / "audio"
 OUTPUT_DIR = BASE_DIR / "output"
 SCRIPT_FILE = BASE_DIR / "script.json"
 OUTPUT_FILE = OUTPUT_DIR / "final.mp4"
+PROMPTS_FILE = BASE_DIR / "IMAGE_PROMPTS.md"
 
 app = Flask(__name__)
 app.secret_key = "travel-video-generator"
@@ -29,7 +29,7 @@ def load_script():
     if SCRIPT_FILE.exists():
         return json.loads(SCRIPT_FILE.read_text(encoding="utf-8"))
     return {
-        "title": "慢慢抵达一座城",
+        "title": "慢慢抵达泉州古城",
         "duration_per_image": 6,
         "aspect_ratio": "16:9",
         "subtitles": [],
@@ -41,13 +41,137 @@ def save_script(data):
     SCRIPT_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-@app.route("/", methods=["GET"])
-def index():
+def default_prompt_form():
+    return {
+        "destination": "泉州古城",
+        "aspect_ratio": "16:9",
+        "style_keywords": "真实摄影、电影感、纪录片风格、自然光、慢节奏文旅宣传片、高清、真实细节、自然色彩",
+        "negative_keywords": "避免文字、避免水印、避免Logo、避免插画风、避免卡通感、避免AI感、避免乱码招牌、避免畸形建筑、避免人物脸部特写、避免过度滤镜",
+        "scenes_text": "\n".join([
+            "古城清晨",
+            "西街老巷",
+            "红砖古厝",
+            "开元寺双塔",
+            "街头烟火气",
+            "簪花古巷",
+            "旅人背影",
+            "傍晚收尾"
+        ])
+    }
+
+
+def read_prompt_output():
+    if PROMPTS_FILE.exists():
+        return PROMPTS_FILE.read_text(encoding="utf-8")
+    return ""
+
+
+def scene_detail(destination, scene_name):
+    name = scene_name.strip()
+
+    if "清晨" in name:
+        return f"清晨的{destination}真实摄影画面，老街巷铺展开来，远处有地标轮廓，晨光柔和，空气微微通透，树影落在屋檐和石板路上，安静怀旧"
+    if "西街" in name or "老巷" in name:
+        return f"{destination}老街巷真实摄影画面，传统建筑、石板路、街边小店与少量自然走过的行人，温暖自然光，生活气息真实"
+    if "红砖" in name or "古厝" in name:
+        return f"{destination}闽南红砖古厝真实摄影特写，老屋屋檐、红砖墙、石板路和斑驳墙面，阳光从巷子上方斜斜落下，墙面有岁月痕迹，安静怀旧，浅景深"
+    if "双塔" in name or "开元寺" in name or "寺" in name:
+        return f"{destination}开元寺双塔真实摄影，古老石塔立在寺庙庭院中，树影斑驳，香火轻烟若隐若现，画面庄重安静，有历史感"
+    if "烟火" in name or "小吃" in name or "街头" in name:
+        return f"{destination}街边小吃摊真实摄影，热汤升腾，摊位前有自然生活场景，老人聊天，游客慢慢经过，画面温暖，富有人间烟火气"
+    if "簪花" in name:
+        return f"闽南簪花女子背影走在{destination}红砖古厝巷子里，传统簪花头饰，阳光照在红砖墙面和石板路上，画面温柔安静，有地方文化气息"
+    if "旅人" in name or "背影" in name:
+        return f"游客背影慢慢走过{destination}老巷，墙面斑驳，石板路上有温暖阳光，巷子安静治愈，城市漫游感明显"
+    if "傍晚" in name or "收尾" in name or "黄昏" in name:
+        return f"傍晚的{destination}远景真实摄影，城市建筑安静铺展，天空微橙，远处光线柔和，诗意文旅宣传片结尾画面"
+
+    return f"{destination}{name}真实摄影画面，保留地域文化特色与生活气息，画面自然、安静、适合文旅宣传片"
+
+
+def get_orientation_text(aspect_ratio):
+    ratio = aspect_ratio.replace(" ", "")
+    if ratio == "9:16":
+        return "竖屏"
+    if ratio == "1:1":
+        return "方图"
+    return "横屏"
+
+
+def build_single_prompt(destination, scene_name, style_keywords, negative_keywords, aspect_ratio):
+    detail = scene_detail(destination, scene_name)
+    orientation = get_orientation_text(aspect_ratio)
+    return f"{detail}，{style_keywords}，{aspect_ratio}{orientation}，{negative_keywords}"
+
+
+def build_prompt_document(destination, aspect_ratio, style_keywords, negative_keywords, scenes):
+    lines = []
+    lines.append(f"# {destination}旅游伪视频图片生成提示词｜{aspect_ratio}版")
+    lines.append("")
+    lines.append("用途：用于即梦、豆包、通义万相、可灵图片等工具生成旅游短视频配图。")
+    lines.append("")
+    lines.append("建议统一参数：")
+    lines.append("")
+    lines.append("```text")
+    lines.append(f"目的地：{destination}")
+    lines.append(f"画幅比例：{aspect_ratio}")
+    lines.append(f"风格：{style_keywords}")
+    lines.append(f"避免项：{negative_keywords}")
+    lines.append("```")
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+
+    for idx, scene in enumerate(scenes, start=1):
+        num = f"{idx:02d}"
+        prompt = build_single_prompt(destination, scene, style_keywords, negative_keywords, aspect_ratio)
+        lines.append(f"## {num}.jpg {scene}")
+        lines.append("")
+        lines.append("```text")
+        lines.append(prompt)
+        lines.append("```")
+        lines.append("")
+
+    lines.append("---")
+    lines.append("")
+    lines.append("## 使用方式")
+    lines.append("")
+    lines.append("1. 复制上面每一条提示词到图片生成工具。")
+    lines.append(f"2. 统一选择 {aspect_ratio} 画幅。")
+    lines.append("3. 生成图片后按顺序命名为 01.jpg、02.jpg、03.jpg ...")
+    lines.append("4. 放入项目的 images/ 文件夹。")
+    lines.append("5. 回到本项目网页继续生成旅游伪视频。")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def build_view_data(prompt_output=None, prompt_form=None):
     ensure_dirs()
     data = load_script()
     image_files = sorted([p.name for p in IMAGE_DIR.iterdir() if p.suffix.lower() in ALLOWED_IMAGE_EXTS])
     has_output = OUTPUT_FILE.exists()
-    return render_template("index.html", data=data, image_files=image_files, has_output=has_output)
+    bgm_exists = (AUDIO_DIR / "bgm.mp3").exists()
+    voice_exists = (AUDIO_DIR / "voice.mp3").exists()
+
+    if prompt_output is None:
+        prompt_output = read_prompt_output()
+    if prompt_form is None:
+        prompt_form = default_prompt_form()
+
+    return {
+        "data": data,
+        "image_files": image_files,
+        "has_output": has_output,
+        "bgm_exists": bgm_exists,
+        "voice_exists": voice_exists,
+        "prompt_output": prompt_output,
+        "prompt_form": prompt_form
+    }
+
+
+@app.route("/", methods=["GET"])
+def index():
+    return render_template("index.html", **build_view_data())
 
 
 @app.route("/save", methods=["POST"])
@@ -57,7 +181,6 @@ def save():
     duration = int(request.form.get("duration_per_image", "6"))
     subtitles_text = request.form.get("subtitles", "").strip()
     voiceover = request.form.get("voiceover", "").strip()
-
     subtitles = [line.strip() for line in subtitles_text.splitlines() if line.strip()]
 
     data = {
@@ -109,6 +232,40 @@ def upload_bgm():
     return redirect(url_for("index"))
 
 
+@app.route("/generate_prompts", methods=["POST"])
+def generate_prompts():
+    ensure_dirs()
+    destination = request.form.get("destination", "泉州古城").strip() or "泉州古城"
+    aspect_ratio = request.form.get("aspect_ratio", "16:9").strip() or "16:9"
+    style_keywords = request.form.get("style_keywords", default_prompt_form()["style_keywords"]).strip()
+    negative_keywords = request.form.get("negative_keywords", default_prompt_form()["negative_keywords"]).strip()
+    scenes_text = request.form.get("scenes_text", "").strip()
+
+    scenes = [line.strip() for line in scenes_text.splitlines() if line.strip()]
+    if not scenes:
+        scenes = [line.strip() for line in default_prompt_form()["scenes_text"].splitlines() if line.strip()]
+
+    prompt_output = build_prompt_document(
+        destination=destination,
+        aspect_ratio=aspect_ratio,
+        style_keywords=style_keywords,
+        negative_keywords=negative_keywords,
+        scenes=scenes
+    )
+    PROMPTS_FILE.write_text(prompt_output, encoding="utf-8")
+
+    prompt_form = {
+        "destination": destination,
+        "aspect_ratio": aspect_ratio,
+        "style_keywords": style_keywords,
+        "negative_keywords": negative_keywords,
+        "scenes_text": "\n".join(scenes)
+    }
+
+    flash("图片提示词已生成，并保存到 IMAGE_PROMPTS.md。")
+    return render_template("index.html", **build_view_data(prompt_output=prompt_output, prompt_form=prompt_form))
+
+
 @app.route("/generate", methods=["POST"])
 def generate():
     ensure_dirs()
@@ -122,7 +279,8 @@ def generate():
             errors="ignore"
         )
         if result.returncode != 0:
-            flash("生成失败：\n" + result.stderr[-1000:])
+            error_text = (result.stderr or result.stdout or "未知错误")[-1500:]
+            flash("生成失败：\n" + error_text)
         else:
             flash("视频生成成功：output/final.mp4")
     except Exception as exc:
