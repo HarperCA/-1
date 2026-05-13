@@ -15,12 +15,16 @@ from api_clients import (
 )
 
 BASE_DIR = Path(__file__).parent
-IMAGE_DIR = BASE_DIR / "images"
-AUDIO_DIR = BASE_DIR / "audio"
-OUTPUT_DIR = BASE_DIR / "output"
-SCRIPT_FILE = BASE_DIR / "script.json"
+CACHE_DIR = BASE_DIR / "generated_cache"
+IMAGE_DIR = CACHE_DIR / "images"
+AUDIO_DIR = CACHE_DIR / "audio"
+OUTPUT_DIR = CACHE_DIR / "output"
+PROMPTS_DIR = CACHE_DIR / "prompts"
+TEMP_DIR = CACHE_DIR / "temp"
+LOG_DIR = CACHE_DIR / "logs"
+SCRIPT_FILE = CACHE_DIR / "script.json"
 OUTPUT_FILE = OUTPUT_DIR / "final.mp4"
-PROMPTS_FILE = BASE_DIR / "IMAGE_PROMPTS.md"
+PROMPTS_FILE = PROMPTS_DIR / "IMAGE_PROMPTS.md"
 
 app = Flask(__name__)
 app.secret_key = "travel-video-generator"
@@ -207,9 +211,13 @@ VOICEOVER_TONES = {
 
 
 def ensure_dirs():
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
     IMAGE_DIR.mkdir(parents=True, exist_ok=True)
     AUDIO_DIR.mkdir(parents=True, exist_ok=True)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    PROMPTS_DIR.mkdir(parents=True, exist_ok=True)
+    TEMP_DIR.mkdir(parents=True, exist_ok=True)
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def get_image_files():
@@ -469,7 +477,7 @@ def build_prompt_document(destination, aspect_ratio, style_keywords, negative_ke
     lines.append("1. 复制上面每一条提示词到图片生成工具。")
     lines.append(f"2. 统一选择 {aspect_ratio} 画幅。")
     lines.append("3. 生成图片后按顺序命名为 01.jpg、02.jpg、03.jpg ...")
-    lines.append("4. 放入项目的 images/ 文件夹。")
+    lines.append("4. 放入项目的 generated_cache/images/ 文件夹，或在网页中上传图片。")
     lines.append("5. 回到本项目网页继续生成旅游伪视频。")
     lines.append("")
     return "\n".join(lines)
@@ -839,7 +847,7 @@ def generate():
             error_text = (result.stderr or result.stdout or "未知错误")[-1500:]
             flash("生成失败：\n" + error_text)
         else:
-            flash("视频生成成功：output/final.mp4")
+            flash("视频生成成功：generated_cache/output/final.mp4")
     except Exception as exc:
         flash(f"生成失败：{exc}")
     return redirect(url_for("index"))

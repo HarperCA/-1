@@ -21,11 +21,12 @@ except ImportError:
 
 
 BASE_DIR = Path(__file__).parent
-IMAGE_DIR = BASE_DIR / "images"
-AUDIO_DIR = BASE_DIR / "audio"
-OUTPUT_DIR = BASE_DIR / "output"
+CACHE_DIR = BASE_DIR / "generated_cache"
+IMAGE_DIR = CACHE_DIR / "images"
+AUDIO_DIR = CACHE_DIR / "audio"
+OUTPUT_DIR = CACHE_DIR / "output"
 OUTPUT_FILE = OUTPUT_DIR / "final.mp4"
-SCRIPT_FILE = BASE_DIR / "script.json"
+SCRIPT_FILE = CACHE_DIR / "script.json"
 VOICE_FILE = AUDIO_DIR / "voice.mp3"
 VOICE_SEGMENT_DIR = AUDIO_DIR / "voice_segments"
 
@@ -47,6 +48,7 @@ FONT_CACHE = {}
 
 
 def ensure_dirs():
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
     IMAGE_DIR.mkdir(parents=True, exist_ok=True)
     AUDIO_DIR.mkdir(parents=True, exist_ok=True)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -364,7 +366,7 @@ def main():
 
     if not image_files:
         raise FileNotFoundError(
-            "images 文件夹里没有图片。\n"
+            "generated_cache/images 文件夹里没有图片。\n"
             "请先通过网页上传图片，或者手动放入图片文件。"
         )
 

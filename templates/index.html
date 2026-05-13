@@ -224,10 +224,10 @@
           <button type="submit">上传背景音乐</button>
         </form>
         <div>
-          {% if bgm_exists %}<span class="status ok">背景音乐已就绪：audio/bgm.mp3</span>{% else %}<span class="status gray">当前没有背景音乐</span>{% endif %}
-          {% if voice_exists %}<span class="status ok">旁白文件存在：audio/voice.mp3</span>{% else %}<span class="status gray">旁白将在生成视频时自动创建</span>{% endif %}
+          {% if bgm_exists %}<span class="status ok">背景音乐已就绪：generated_cache/audio/bgm.mp3</span>{% else %}<span class="status gray">当前没有背景音乐</span>{% endif %}
+          {% if voice_exists %}<span class="status ok">旁白文件存在：generated_cache/audio/voice.mp3</span>{% else %}<span class="status gray">旁白将在生成视频时自动创建</span>{% endif %}
         </div>
-        <p class="small">上传后会保存为 <code>audio/bgm.mp3</code>。生成视频时会自动与 AI 旁白混音。</p>
+        <p class="small">上传后会保存为 <code>generated_cache/audio/bgm.mp3</code>。生成视频时会自动与 AI 旁白混音。</p>
       </div>
     </div>
 
@@ -259,7 +259,7 @@
       <h2>4. 图片提示词结果</h2>
       <textarea id="prompt_output" class="prompt-output" readonly>{{ prompt_output }}</textarea>
       <div><button type="button" onclick="copyPromptText()">复制提示词</button></div>
-      <p class="small">生成后也会自动保存到项目根目录的 <code>IMAGE_PROMPTS.md</code>。</p>
+      <p class="small">生成后也会自动保存到 <code>generated_cache/prompts/IMAGE_PROMPTS.md</code>。</p>
     </div>
 
     <div class="card">
@@ -323,7 +323,7 @@
         <button class="green" type="submit">开始生成 final.mp4</button>
         {% if has_output %}<a class="btn secondary" href="/download">下载 final.mp4</a>{% endif %}
       </form>
-      <p class="small">生成过程会调用 <code>main.py</code>，自动生成 <code>audio/voice.mp3</code> 与 <code>output/final.mp4</code>。</p>
+      <p class="small">生成过程会调用 <code>main.py</code>，自动生成 <code>generated_cache/audio/voice.mp3</code> 与 <code>generated_cache/output/final.mp4</code>。</p>
     </div>
   </div>
 </body>

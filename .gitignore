@@ -3,10 +3,29 @@ __pycache__/
 .venv/
 venv/
 env/
+
+# Generated runtime cache. Keep folder structure only.
+generated_cache/**
+!generated_cache/
+!generated_cache/**/
+!generated_cache/**/.gitkeep
+
+# Legacy generated output locations kept ignored for old local files.
 output/*.mp4
 output/*.mov
 output/*.avi
 audio/*.mp3
 audio/*.wav
+audio/voice_segments/
+images/*.jpg
+images/*.jpeg
+images/*.png
+IMAGE_PROMPTS.md
+script.json
+
+# Local logs and temporary render files.
+*.log
+*TEMP_MPY*.mp4
+
 .DS_Store
 Thumbs.db
