@@ -46,6 +46,25 @@ OPENAI_COMPATIBLE_PRESETS = {
 }
 
 
+def load_local_env():
+    env_path = Path(__file__).parent / ".env"
+    if not env_path.exists():
+        return
+
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip().lstrip("\ufeff")
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+load_local_env()
+
+
 def _settings_from_preset(provider, key_override="", base_override="", model_override="", vision=False):
     preset = OPENAI_COMPATIBLE_PRESETS.get(provider, OPENAI_COMPATIBLE_PRESETS[provider if provider in OPENAI_COMPATIBLE_PRESETS else "openai"])
     key_env = preset["key_env"]
