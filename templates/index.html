@@ -38,6 +38,8 @@
     .prompt-output { min-height: 360px; font-family: Consolas, "Courier New", monospace; background: #fbfcff; }
     .footer-tip { color: #6b7280; font-size: 13px; line-height: 1.8; margin-top: 8px; }
     .helper-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px; margin: 12px 0; }
+    .checkline { display: flex; align-items: center; gap: 9px; margin: 12px 0 0; color: #394150; font-weight: 700; }
+    .checkline input { width: 18px; height: 18px; }
     @media (max-width: 900px) { .grid, .two-col { grid-template-columns: 1fr; } .container { padding: 16px; } h1 { font-size: 26px; } .file-row { align-items: flex-start; flex-direction: column; } }
   </style>
   <script>
@@ -61,6 +63,18 @@
     {% with messages = get_flashed_messages() %}
       {% if messages %}<div class="messages">{% for message in messages %}{{ message }}{% if not loop.last %}\n{% endif %}{% endfor %}</div>{% endif %}
     {% endwith %}
+
+    <div class="card">
+      <h2>API 接入状态</h2>
+      <div>
+        {% if api_settings.text_available %}<span class="status ok">DeepSeek 文本已就绪</span>{% else %}<span class="status gray">DeepSeek 未配置</span>{% endif %}
+        {% if api_settings.vision_available %}<span class="status ok">Qwen-VL 看图已就绪</span>{% else %}<span class="status gray">Qwen-VL 未配置</span>{% endif %}
+        <span class="status gray">文本模型：{{ api_settings.text_model or "未设置" }}</span>
+        <span class="status gray">视觉模型：{{ api_settings.vision_model or "未设置" }}</span>
+      </div>
+      <p class="small">{{ api_status }}</p>
+      <p class="small">示例：<code>DEEPSEEK_API_KEY=你的Key</code>、<code>DASHSCOPE_API_KEY=你的Key</code>。图片生成仍在外部工具完成，本项目不会调用生图 API。</p>
+    </div>
 
     <div class="grid">
       <div class="card">
@@ -106,6 +120,7 @@
         <label>风格关键词</label><textarea name="style_keywords">{{ prompt_form.style_keywords }}</textarea>
         <label>避免项 / 负面约束</label><textarea name="negative_keywords">{{ prompt_form.negative_keywords }}</textarea>
         <label>镜头主题，每行一个</label><textarea name="scenes_text">{{ prompt_form.scenes_text }}</textarea>
+        <label class="checkline"><input type="checkbox" name="use_api" {% if api_settings.text_available %}checked{% endif %}>使用文本 API 增强提示词</label>
         <button class="green" type="submit">一键生成图片提示词</button>
       </form>
       <p class="footer-tip">这里生成的是给图片生成工具使用的提示词，不是在本项目里直接出图。</p>
@@ -141,6 +156,13 @@
         <textarea name="subtitles">{{ data.subtitles | join('\n') }}</textarea>
         <label>AI旁白文本，每行一句，对应一张图片</label>
         <textarea name="voiceover">{{ data.voiceover }}</textarea>
+        {% if data.xiaohongshu_title or data.video_description or data.image_order_advice %}
+          <div class="helper-box">
+            {% if data.xiaohongshu_title %}<p class="small"><strong>小红书标题：</strong>{{ data.xiaohongshu_title }}</p>{% endif %}
+            {% if data.video_description %}<p class="small"><strong>视频简介：</strong>{{ data.video_description }}</p>{% endif %}
+            {% if data.image_order_advice %}<p class="small"><strong>图片顺序建议：</strong>{{ data.image_order_advice }}</p>{% endif %}
+          </div>
+        {% endif %}
         <button type="submit">保存脚本</button>
       </form>
 
@@ -155,6 +177,12 @@
           <input type="hidden" name="title" value="{{ data.title }}">
           <input type="hidden" name="duration_per_image" value="{{ data.duration_per_image }}">
           <button class="orange" type="submit">根据图片数量和播放速度自动生成旁白/字幕</button>
+        </form>
+        <form action="/generate_smart_script" method="post">
+          <input type="hidden" name="title" value="{{ data.title }}">
+          <input type="hidden" name="duration_per_image" value="{{ data.duration_per_image }}">
+          <input type="hidden" name="voiceover_tone" value="{{ current_voiceover_tone }}">
+          <button class="green" type="submit">根据上传图片内容生成旁白/字幕</button>
         </form>
         <p class="small">会按照当前已上传图片数量生成对应行数；并根据“每张图片持续秒数”控制每句长度，尽量让朗读时间和画面时间匹配。</p>
       </div>

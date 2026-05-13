@@ -4,6 +4,14 @@ import subprocess
 import sys
 
 from flask import Flask, render_template, request, send_file, redirect, url_for, flash
+from api_clients import (
+    analyze_images_with_qwen_vl,
+    describe_api_status,
+    generate_prompt_markdown_with_api,
+    get_api_settings,
+    write_city_script_with_deepseek,
+    write_script_with_deepseek,
+)
 
 BASE_DIR = Path(__file__).parent
 IMAGE_DIR = BASE_DIR / "images"
@@ -373,6 +381,8 @@ def build_view_data(prompt_output=None, prompt_form=None):
         "prompt_form": prompt_form,
         "voiceover_tones": VOICEOVER_TONES,
         "current_voiceover_tone": data.get("voiceover_tone", "healing"),
+        "api_status": describe_api_status(),
+        "api_settings": get_api_settings(),
     }
 
 
@@ -414,19 +424,94 @@ def generate_voiceover():
     if voiceover_tone not in VOICEOVER_TONES:
         voiceover_tone = "healing"
     image_count = len(get_image_files()) or 8
+    tone_label = VOICEOVER_TONES[voiceover_tone]["label"]
+    try:
+        script_result = write_city_script_with_deepseek(
+            city=guess_destination(title),
+            image_count=image_count,
+            duration_per_image=duration,
+            tone_label=tone_label,
+        )
+        subtitles = [str(line).strip() for line in script_result.get("subtitles", []) if str(line).strip()]
+        voiceover_lines = [str(line).strip() for line in script_result.get("voiceover", []) if str(line).strip()]
+        if len(subtitles) != image_count or len(voiceover_lines) != image_count:
+            raise RuntimeError("DeepSeek 返回的字幕或旁白数量和图片数量不一致。")
 
-    lines = generate_voiceover_lines(title, image_count, duration, voiceover_tone)
-    data["title"] = title
+        lines = voiceover_lines
+        data["subtitles"] = subtitles
+        data["xiaohongshu_title"] = str(script_result.get("xiaohongshu_title", "")).strip()
+        data["video_description"] = str(script_result.get("video_description", "")).strip()
+        data["title"] = str(script_result.get("title", title)).strip() or title
+        source_text = "DeepSeek"
+    except Exception as exc:
+        lines = generate_voiceover_lines(title, image_count, duration, voiceover_tone)
+        data["subtitles"] = lines
+        data["title"] = title
+        source_text = f"本地规则（DeepSeek 不可用：{exc}）"
+
     data["duration_per_image"] = duration
     data["aspect_ratio"] = "16:9"
     data["voiceover_tone"] = voiceover_tone
-    data["subtitles"] = lines
     data["voiceover"] = "\n".join(lines)
     save_script(data)
 
     total_seconds = image_count * duration
-    tone_label = VOICEOVER_TONES[voiceover_tone]["label"]
-    flash(f"已按“{tone_label}”语气，根据 {image_count} 张图片和每张 {duration} 秒，自动生成 {len(lines)} 句旁白和字幕。预计视频约 {total_seconds} 秒。")
+    flash(f"已通过{source_text}按“{tone_label}”语气，根据 {image_count} 张图片和每张 {duration} 秒，生成 {len(lines)} 句旁白和字幕。预计视频约 {total_seconds} 秒。")
+    return redirect(url_for("index"))
+
+
+@app.route("/generate_smart_script", methods=["POST"])
+def generate_smart_script():
+    ensure_dirs()
+    data = load_script()
+    title = request.form.get("title", data.get("title", "慢慢抵达一座城")).strip()
+    duration = int(request.form.get("duration_per_image", data.get("duration_per_image", 6)))
+    voiceover_tone = request.form.get("voiceover_tone", data.get("voiceover_tone", "healing"))
+    if voiceover_tone not in VOICEOVER_TONES:
+        voiceover_tone = "healing"
+
+    image_files = get_image_files()
+    if not image_files:
+        flash("请先上传图片，再根据图片内容生成旁白和字幕。")
+        return redirect(url_for("index"))
+
+    try:
+        tone_label = VOICEOVER_TONES[voiceover_tone]["label"]
+        image_analysis = analyze_images_with_qwen_vl(image_files)
+        script_result = write_script_with_deepseek(
+            image_analysis=image_analysis,
+            city=guess_destination(title),
+            duration_per_image=duration,
+            tone_label=tone_label,
+        )
+        subtitles = [str(line).strip() for line in script_result.get("subtitles", []) if str(line).strip()]
+        voiceover_lines = [str(line).strip() for line in script_result.get("voiceover", []) if str(line).strip()]
+        if not subtitles or not voiceover_lines:
+            raise RuntimeError("DeepSeek 没有生成可用字幕或旁白。")
+
+        data["title"] = str(script_result.get("title", title)).strip() or title
+        data["duration_per_image"] = duration
+        data["aspect_ratio"] = "16:9"
+        data["voiceover_tone"] = voiceover_tone
+        data["subtitles"] = subtitles
+        data["voiceover"] = "\n".join(voiceover_lines)
+        data["xiaohongshu_title"] = str(script_result.get("xiaohongshu_title", "")).strip()
+        data["video_description"] = str(script_result.get("video_description", "")).strip()
+        data["image_order_advice"] = str(script_result.get("image_order_advice", "")).strip()
+        data["image_analysis"] = image_analysis
+        save_script(data)
+        flash(f"已用 Qwen-VL 分析 {len(image_files)} 张图片，并由 DeepSeek 生成标题、旁白、字幕、小红书标题和简介。")
+    except Exception as exc:
+        lines = generate_voiceover_lines(title, len(image_files), duration, voiceover_tone)
+        data["title"] = title
+        data["duration_per_image"] = duration
+        data["aspect_ratio"] = "16:9"
+        data["voiceover_tone"] = voiceover_tone
+        data["subtitles"] = lines
+        data["voiceover"] = "\n".join(lines)
+        save_script(data)
+        flash(f"视觉 API 不可用，已回退到本地规则生成。原因：{exc}")
+
     return redirect(url_for("index"))
 
 
@@ -510,13 +595,35 @@ def generate_prompts():
     if not scenes:
         scenes = [line.strip() for line in default_prompt_form()["scenes_text"].splitlines() if line.strip()]
 
-    prompt_output = build_prompt_document(
-        destination=destination,
-        aspect_ratio=aspect_ratio,
-        style_keywords=style_keywords,
-        negative_keywords=negative_keywords,
-        scenes=scenes
-    )
+    use_api = request.form.get("use_api") == "on"
+    if use_api:
+        try:
+            prompt_output = generate_prompt_markdown_with_api(
+                destination=destination,
+                aspect_ratio=aspect_ratio,
+                style_keywords=style_keywords,
+                negative_keywords=negative_keywords,
+                scenes=scenes,
+            )
+            flash("已调用文本 API 增强生成图片提示词，并保存到 IMAGE_PROMPTS.md。")
+        except Exception as exc:
+            prompt_output = build_prompt_document(
+                destination=destination,
+                aspect_ratio=aspect_ratio,
+                style_keywords=style_keywords,
+                negative_keywords=negative_keywords,
+                scenes=scenes
+            )
+            flash(f"文本 API 不可用，已回退到本地规则生成提示词。原因：{exc}")
+    else:
+        prompt_output = build_prompt_document(
+            destination=destination,
+            aspect_ratio=aspect_ratio,
+            style_keywords=style_keywords,
+            negative_keywords=negative_keywords,
+            scenes=scenes
+        )
+        flash("图片提示词已生成，并保存到 IMAGE_PROMPTS.md。")
     PROMPTS_FILE.write_text(prompt_output, encoding="utf-8")
 
     prompt_form = {
@@ -527,7 +634,6 @@ def generate_prompts():
         "scenes_text": "\n".join(scenes)
     }
 
-    flash("图片提示词已生成，并保存到 IMAGE_PROMPTS.md。")
     return render_template("index.html", **build_view_data(prompt_output=prompt_output, prompt_form=prompt_form))
 
 

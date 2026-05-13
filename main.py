@@ -414,10 +414,15 @@ def main():
         "pan_down",
         "zoom_out"
     ]
+    allowed_modes = {"zoom_in", "zoom_out", "pan_left", "pan_right", "pan_up", "pan_down", "still"}
+    image_analysis = data.get("image_analysis", [])
 
     clips = []
     for index, image_path in enumerate(image_files):
-        mode = modes[index % len(modes)]
+        analyzed_mode = ""
+        if index < len(image_analysis) and isinstance(image_analysis[index], dict):
+            analyzed_mode = image_analysis[index].get("best_motion", "")
+        mode = analyzed_mode if analyzed_mode in allowed_modes else modes[index % len(modes)]
         duration = durations[index]
         subtitle = subtitle_lines[index] if index < len(subtitle_lines) else ""
         print(f"正在处理：{image_path.name}，运镜：{mode}，时长：{duration:.2f} 秒，字幕：{subtitle}")
