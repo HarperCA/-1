@@ -3,11 +3,12 @@ import json
 import subprocess
 import sys
 
-from flask import Flask, render_template, request, send_file, redirect, url_for, flash
+from flask import Flask, render_template, request, send_file, redirect, url_for, flash, jsonify
 from api_clients import (
     analyze_images_with_qwen_vl,
     describe_api_status,
     generate_prompt_markdown_with_api,
+    generate_scene_topics_with_api,
     get_api_settings,
     write_city_script_with_deepseek,
     write_script_with_deepseek,
@@ -35,6 +36,81 @@ DEFAULT_SCENES = [
     "旅人背影",
     "傍晚收尾",
 ]
+
+SCENE_PRESETS = {
+    "泉州": ["古城清晨", "西街老巷", "红砖古厝", "开元寺双塔", "街头生活感", "簪花古巷", "旅人背影", "傍晚收尾"],
+    "厦门": ["鼓浪屿晨光", "海边栈道", "骑楼老街", "南普陀寺", "沙坡尾生活", "环岛路骑行", "海风旅人", "日落海湾"],
+    "北京": ["中轴线晨光", "胡同深处", "故宫红墙", "景山远眺", "老北京烟火", "四合院门楼", "旅人漫步", "黄昏城楼"],
+    "上海": ["外滩晨光", "武康路街景", "石库门弄堂", "陆家嘴天际线", "咖啡店日常", "梧桐树影", "城市旅人", "黄浦江夜色"],
+    "杭州": ["西湖晨雾", "断桥远景", "灵隐寺山门", "龙井茶园", "湖边生活感", "苏堤漫步", "旅人背影", "夕照湖面"],
+    "苏州": ["平江路清晨", "小桥流水", "苏式园林", "白墙黛瓦", "茶馆生活", "评弹巷口", "旅人慢行", "古城傍晚"],
+    "成都": ["宽窄巷晨光", "锦里街景", "茶馆日常", "老街烟火", "熊猫元素远景", "川西院落", "旅人慢逛", "夜色灯火"],
+    "重庆": ["山城晨雾", "洪崖洞层楼", "江边步道", "轻轨穿城", "老街梯坎", "火锅街头", "旅人背影", "两江夜景"],
+    "西安": ["城墙晨光", "回民街烟火", "大雁塔远景", "唐风建筑", "老巷生活", "碑林街景", "旅人漫步", "古都夜色"],
+    "南京": ["秦淮河晨色", "夫子庙街景", "明城墙树影", "梧桐大道", "老门东烟火", "民国建筑", "旅人背影", "金陵傍晚"],
+    "广州": ["骑楼晨光", "珠江岸线", "西关老街", "早茶生活", "粤式建筑", "城市绿荫", "旅人慢行", "珠江夜色"],
+    "深圳": ["海岸晨光", "城市天际线", "人才公园", "创意园街景", "湾区生活", "绿道漫步", "旅人背影", "日落海湾"],
+    "大理": ["洱海晨光", "古城街巷", "苍山远景", "白族民居", "咖啡小店", "环海公路", "旅人背影", "洱海日落"],
+    "丽江": ["古城清晨", "石板老街", "木府建筑", "纳西庭院", "溪水巷口", "手鼓小店", "旅人慢行", "古城夜色"],
+    "长沙": ["湘江晨光", "橘子洲远景", "老街烟火", "文和友街景", "夜市生活", "城市霓虹", "旅人背影", "江边夜色"],
+    "武汉": ["江汉关晨光", "黄鹤楼远景", "长江大桥", "汉口老街", "过早生活", "江滩漫步", "旅人背影", "两江夜色"],
+}
+
+
+def generate_default_scenes(destination):
+    destination = (destination or "").strip()
+    if not destination:
+        return DEFAULT_SCENES
+
+    for keyword, scenes in SCENE_PRESETS.items():
+        if keyword in destination:
+            return scenes
+
+    short_name = destination
+    for suffix in ["古城", "老城", "市", "旅游", "旅行", "景区"]:
+        short_name = short_name.replace(suffix, "")
+    short_name = short_name.strip() or destination
+
+    return [
+        f"{short_name}清晨",
+        f"{short_name}街巷",
+        "地标建筑",
+        "地方建筑细节",
+        "街头生活感",
+        "本地文化元素",
+        "旅人背影",
+        "傍晚收尾",
+    ]
+
+
+def fit_scene_count(scenes, count, destination=""):
+    scenes = [scene for scene in scenes if scene]
+    if not scenes:
+        scenes = generate_default_scenes(destination)
+    extras = ["晨光开场", "远景航拍", "地标特写", "街头日常", "文化细节", "旅人漫步", "傍晚光影", "夜色收尾"]
+    index = 0
+    while len(scenes) < count:
+        candidate = extras[index % len(extras)]
+        if candidate in scenes:
+            candidate = f"{candidate}{index + 1}"
+        scenes.append(candidate)
+        index += 1
+    return scenes[:count]
+
+
+def motion_strategy_for_destination(destination):
+    destination = destination or ""
+    if any(keyword in destination for keyword in ["桂林", "阳朔", "山水", "漓江", "大理", "洱海", "张家界", "黄山"]):
+        return "山水型运镜：航拍或高机位远景建立空间，水面低机位缓慢推进，船只/竹筏侧向跟拍，倒影镜头稳定悬停，山体局部用仰拍或轻微上摇。"
+    if any(keyword in destination for keyword in ["重庆", "山城", "香港"]):
+        return "山城型运镜：利用高低落差俯拍，楼梯/坡道跟拍，建筑纵深推进，轻轨或道路横向平移，夜景结尾缓慢拉远。"
+    if any(keyword in destination for keyword in ["苏州", "乌镇", "周庄", "水乡", "园林"]):
+        return "园林水乡型运镜：小桥水面横向平移，窗棂和树枝作前景带入，对称构图稳定悬停，曲径和回廊慢速推进。"
+    if any(keyword in destination for keyword in ["上海", "深圳", "广州", "都市", "外滩", "陆家嘴"]):
+        return "现代都市型运镜：天际线远景拉远，道路纵深推进，玻璃幕墙反射构图，江面或街区稳定横移，夜景灯光做收束。"
+    if any(keyword in destination for keyword in ["北京", "西安", "南京", "泉州", "丽江", "古城", "老街", "胡同"]):
+        return "古城老街型运镜：巷道平视慢推，门窗框景，转角横向平移，建筑细节近景切入，生活烟火用中景跟拍。"
+    return "综合文旅运镜：先用远景建立环境，中段穿插中景生活与近景细节，适当使用平移、推进、拉远和稳定悬停，结尾用暮色或远景收束。"
 
 VOICEOVER_TONES = {
     "healing": {
@@ -158,13 +234,38 @@ def save_script(data):
     SCRIPT_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def default_prompt_form():
+def plan_video_timing(video_duration):
+    try:
+        video_duration = int(float(video_duration))
+    except (TypeError, ValueError):
+        video_duration = 60
+
+    video_duration = max(10, min(600, video_duration))
+    preferred_seconds = 5
+    image_count = max(3, round(video_duration / preferred_seconds))
+    image_count = min(80, image_count)
+    duration_per_image = round(video_duration / image_count, 1)
+
     return {
-        "destination": "泉州古城",
+        "video_duration": video_duration,
+        "image_count": image_count,
+        "duration_per_image": duration_per_image,
+    }
+
+
+def default_prompt_form():
+    destination = "泉州古城"
+    video_duration = 60
+    timing_plan = plan_video_timing(video_duration)
+    return {
+        "destination": destination,
+        "video_duration": video_duration,
+        "image_count": timing_plan["image_count"],
+        "planned_duration_per_image": timing_plan["duration_per_image"],
         "aspect_ratio": "16:9",
         "style_keywords": "真实摄影、电影感、纪录片风格、自然光、慢节奏文旅宣传片、高清、真实细节、自然色彩、干净画面、远景人物、背影、无清晰面部",
         "negative_keywords": "避免文字、避免水印、避免Logo、避免插画风、避免卡通感、避免AI感、避免乱码招牌、避免错误建筑结构、避免不自然建筑比例、避免近景人像、避免清晰面部、避免夸张肢体、避免过度滤镜",
-        "scenes_text": "\n".join(DEFAULT_SCENES)
+        "scenes_text": "\n".join(generate_default_scenes(destination))
     }
 
 
@@ -314,14 +415,28 @@ def build_single_prompt(destination, scene_name, style_keywords, negative_keywor
     detail = scene_detail(destination, scene_name)
     orientation = get_orientation_text(aspect_ratio)
     safe_people_text = "人物只作为远景或背影出现，无清晰面部"
-    return f"{detail}，{style_keywords}，{safe_people_text}，{aspect_ratio}{orientation}，{negative_keywords}"
+    camera_text = (
+        f"{motion_strategy_for_destination(destination)}"
+        "连续文旅短片分镜，统一真实摄影色彩和自然光质感，"
+        "明确景别、拍摄角度、主体大小、前景中景背景层次，"
+        "适合后期缓慢推进、轻微拉远或横向平移运镜，构图稳定，画面连贯"
+    )
+    return f"{detail}，{camera_text}，{style_keywords}，{safe_people_text}，{aspect_ratio}{orientation}，{negative_keywords}"
 
 
-def build_prompt_document(destination, aspect_ratio, style_keywords, negative_keywords, scenes):
+def build_prompt_document(destination, aspect_ratio, style_keywords, negative_keywords, scenes, timing_plan=None):
+    timing_plan = timing_plan or {}
     lines = []
     lines.append(f"# {destination}旅游伪视频图片生成提示词｜{aspect_ratio}版")
     lines.append("")
     lines.append("用途：用于即梦、豆包、通义万相、可灵图片等工具生成旅游短视频配图。")
+    if timing_plan:
+        lines.append("")
+        lines.append(
+            f"视频规划：总时长约 {timing_plan.get('video_duration')} 秒，"
+            f"建议生成 {timing_plan.get('image_count')} 张图，"
+            f"每张图停留约 {timing_plan.get('duration_per_image')} 秒。"
+        )
     lines.append("")
     lines.append("建议统一参数：")
     lines.append("")
@@ -330,6 +445,8 @@ def build_prompt_document(destination, aspect_ratio, style_keywords, negative_ke
     lines.append(f"画幅比例：{aspect_ratio}")
     lines.append(f"风格：{style_keywords}")
     lines.append(f"避免项：{negative_keywords}")
+    lines.append(f"城市运镜策略：{motion_strategy_for_destination(destination)}")
+    lines.append("统一镜头策略：作为同一支连续文旅短片，保持天气、色彩、光线、摄影质感统一；远景/中景/近景/特写交替；每张图明确景别、角度、主体大小、画面层次和适合的运镜方向。")
     lines.append("```")
     lines.append("")
     lines.append("---")
@@ -582,10 +699,47 @@ def upload_bgm():
     return redirect(url_for("index"))
 
 
+@app.route("/generate_scene_topics", methods=["POST"])
+def generate_scene_topics():
+    destination = request.form.get("destination", "").strip()
+    aspect_ratio = request.form.get("aspect_ratio", "16:9").strip() or "16:9"
+    timing_plan = plan_video_timing(request.form.get("video_duration", "60"))
+    style_keywords = request.form.get("style_keywords", "").strip()
+    negative_keywords = request.form.get("negative_keywords", "").strip()
+    scenes_text = request.form.get("scenes_text", "").strip()
+    current_scenes = [line.strip() for line in scenes_text.splitlines() if line.strip()]
+
+    if not destination:
+        return jsonify({"ok": False, "error": "请先输入目的地/主题。"}), 400
+
+    try:
+        scenes = generate_scene_topics_with_api(
+            destination=destination,
+            aspect_ratio=aspect_ratio,
+            style_keywords=style_keywords,
+            negative_keywords=negative_keywords,
+            count=timing_plan["image_count"],
+            current_scenes=current_scenes,
+            video_duration=timing_plan["video_duration"],
+            duration_per_image=timing_plan["duration_per_image"],
+        )
+        scenes = fit_scene_count(scenes, timing_plan["image_count"], destination)
+        return jsonify({"ok": True, "scenes": scenes, "source": "DeepSeek", "timing_plan": timing_plan})
+    except Exception as exc:
+        return jsonify({
+            "ok": False,
+            "error": str(exc),
+            "fallback_scenes": fit_scene_count(generate_default_scenes(destination), timing_plan["image_count"], destination),
+            "timing_plan": timing_plan,
+            "source": "local_fallback",
+        }), 200
+
+
 @app.route("/generate_prompts", methods=["POST"])
 def generate_prompts():
     ensure_dirs()
     destination = request.form.get("destination", "泉州古城").strip() or "泉州古城"
+    timing_plan = plan_video_timing(request.form.get("video_duration", "60"))
     aspect_ratio = request.form.get("aspect_ratio", "16:9").strip() or "16:9"
     style_keywords = request.form.get("style_keywords", default_prompt_form()["style_keywords"]).strip()
     negative_keywords = request.form.get("negative_keywords", default_prompt_form()["negative_keywords"]).strip()
@@ -593,18 +747,38 @@ def generate_prompts():
 
     scenes = [line.strip() for line in scenes_text.splitlines() if line.strip()]
     if not scenes:
-        scenes = [line.strip() for line in default_prompt_form()["scenes_text"].splitlines() if line.strip()]
+        scenes = generate_default_scenes(destination)
+    scenes = fit_scene_count(scenes, timing_plan["image_count"], destination)
 
     use_api = request.form.get("use_api") == "on"
     if use_api:
         try:
+            scenes = generate_scene_topics_with_api(
+                destination=destination,
+                aspect_ratio=aspect_ratio,
+                style_keywords=style_keywords,
+                negative_keywords=negative_keywords,
+                count=timing_plan["image_count"],
+                current_scenes=scenes,
+                video_duration=timing_plan["video_duration"],
+                duration_per_image=timing_plan["duration_per_image"],
+            )
+            scenes = fit_scene_count(scenes, timing_plan["image_count"], destination)
             prompt_output = generate_prompt_markdown_with_api(
                 destination=destination,
                 aspect_ratio=aspect_ratio,
                 style_keywords=style_keywords,
                 negative_keywords=negative_keywords,
                 scenes=scenes,
+                timing_plan=timing_plan,
             )
+            if "城市运镜策略" not in prompt_output:
+                prompt_output = (
+                    f"## 城市运镜策略\n\n"
+                    f"{motion_strategy_for_destination(destination)}\n\n"
+                    f"---\n\n"
+                    f"{prompt_output}"
+                )
             flash("已调用文本 API 增强生成图片提示词，并保存到 IMAGE_PROMPTS.md。")
         except Exception as exc:
             prompt_output = build_prompt_document(
@@ -612,7 +786,8 @@ def generate_prompts():
                 aspect_ratio=aspect_ratio,
                 style_keywords=style_keywords,
                 negative_keywords=negative_keywords,
-                scenes=scenes
+                scenes=scenes,
+                timing_plan=timing_plan,
             )
             flash(f"文本 API 不可用，已回退到本地规则生成提示词。原因：{exc}")
     else:
@@ -621,13 +796,24 @@ def generate_prompts():
             aspect_ratio=aspect_ratio,
             style_keywords=style_keywords,
             negative_keywords=negative_keywords,
-            scenes=scenes
+            scenes=scenes,
+            timing_plan=timing_plan,
         )
         flash("图片提示词已生成，并保存到 IMAGE_PROMPTS.md。")
     PROMPTS_FILE.write_text(prompt_output, encoding="utf-8")
 
+    data = load_script()
+    data["title"] = destination
+    data["duration_per_image"] = max(2, int(round(timing_plan["duration_per_image"])))
+    data["planned_video_duration"] = timing_plan["video_duration"]
+    data["planned_image_count"] = timing_plan["image_count"]
+    save_script(data)
+
     prompt_form = {
         "destination": destination,
+        "video_duration": timing_plan["video_duration"],
+        "image_count": timing_plan["image_count"],
+        "planned_duration_per_image": timing_plan["duration_per_image"],
         "aspect_ratio": aspect_ratio,
         "style_keywords": style_keywords,
         "negative_keywords": negative_keywords,

@@ -51,6 +51,127 @@
       document.execCommand("copy");
       alert("图片提示词已复制。");
     }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const destinationInput = document.getElementById("destination_input");
+      const videoDurationInput = document.getElementById("video_duration_input");
+      const aspectRatioInput = document.querySelector('input[name="aspect_ratio"]');
+      const styleTextarea = document.querySelector('textarea[name="style_keywords"]');
+      const negativeTextarea = document.querySelector('textarea[name="negative_keywords"]');
+      const scenesTextarea = document.getElementById("scenes_text");
+      const promptForm = document.getElementById("prompt_form");
+      const sceneStatus = document.getElementById("scene_status");
+      const rewriteButton = document.getElementById("rewrite_scenes_button");
+      const scriptTitleInput = document.getElementById("script_title_input");
+      const scriptDurationInput = document.getElementById("script_duration_input");
+      const scriptToneSelect = document.getElementById("script_tone_select");
+      const timingPlanInput = document.getElementById("timing_plan_input");
+      const generationTitleInputs = document.querySelectorAll(".generation-title-input");
+      const generationDurationInputs = document.querySelectorAll(".generation-duration-input");
+      const generationToneInputs = document.querySelectorAll(".generation-tone-input");
+      if (!destinationInput || !scenesTextarea) return;
+
+      let requestTimer = null;
+      let requestId = 0;
+
+      const setStatus = (text) => {
+        if (sceneStatus) sceneStatus.textContent = text || "";
+      };
+
+      const planTiming = () => {
+        const rawDuration = videoDurationInput ? Number.parseFloat(videoDurationInput.value) : 60;
+        const videoDuration = Math.max(10, Math.min(600, Number.isFinite(rawDuration) ? rawDuration : 60));
+        const imageCount = Math.max(3, Math.min(80, Math.round(videoDuration / 5)));
+        const durationPerImage = Math.round((videoDuration / imageCount) * 10) / 10;
+        return { videoDuration, imageCount, durationPerImage };
+      };
+
+      const updateTimingPlanDisplay = () => {
+        if (!timingPlanInput) return;
+        const plan = planTiming();
+        timingPlanInput.value = `约 ${plan.imageCount} 张图，每张约 ${plan.durationPerImage} 秒`;
+      };
+
+      const rewriteScenesWithDeepSeek = async () => {
+        const destination = destinationInput.value.trim();
+        if (!destination) return;
+
+        const currentRequestId = ++requestId;
+        setStatus("正在调用 DeepSeek 重写镜头主题...");
+
+        const formData = new FormData();
+        formData.append("destination", destination);
+        formData.append("video_duration", videoDurationInput ? videoDurationInput.value : "60");
+        formData.append("aspect_ratio", aspectRatioInput ? aspectRatioInput.value : "16:9");
+        formData.append("style_keywords", styleTextarea ? styleTextarea.value : "");
+        formData.append("negative_keywords", negativeTextarea ? negativeTextarea.value : "");
+        formData.append("scenes_text", scenesTextarea.value);
+
+        try {
+          const response = await fetch("/generate_scene_topics", {
+            method: "POST",
+            body: formData,
+          });
+          const result = await response.json();
+          if (currentRequestId !== requestId) return;
+
+          if (result.ok && result.scenes && result.scenes.length) {
+            scenesTextarea.value = result.scenes.join("\n");
+            const plan = result.timing_plan || {};
+            setStatus(`已通过 DeepSeek 按目的地和时长重写：${plan.image_count || result.scenes.length} 张图，每张约 ${plan.duration_per_image || "自动"} 秒。正在生成对应图片提示词...`);
+            if (promptForm && result.scenes.length) {
+              promptForm.submit();
+            }
+          } else if (result.fallback_scenes && result.fallback_scenes.length) {
+            scenesTextarea.value = result.fallback_scenes.join("\n");
+            const plan = result.timing_plan || {};
+            setStatus(`DeepSeek 暂不可用，已按时长本地兜底：${plan.image_count || result.fallback_scenes.length} 张图，每张约 ${plan.duration_per_image || "自动"} 秒。${result.error || ""}`);
+          } else {
+            setStatus(result.error || "DeepSeek 没有返回可用镜头主题。");
+          }
+        } catch (error) {
+          if (currentRequestId !== requestId) return;
+          setStatus(`调用 DeepSeek 失败：${error.message}`);
+        }
+      };
+
+      const scheduleRewrite = () => {
+        updateTimingPlanDisplay();
+        clearTimeout(requestTimer);
+        requestTimer = setTimeout(rewriteScenesWithDeepSeek, 700);
+      };
+
+      updateTimingPlanDisplay();
+      destinationInput.addEventListener("input", scheduleRewrite);
+      destinationInput.addEventListener("change", rewriteScenesWithDeepSeek);
+      if (videoDurationInput) {
+        videoDurationInput.addEventListener("input", scheduleRewrite);
+        videoDurationInput.addEventListener("change", rewriteScenesWithDeepSeek);
+      }
+      if (rewriteButton) {
+        rewriteButton.addEventListener("click", rewriteScenesWithDeepSeek);
+      }
+
+      const syncGenerationInputs = () => {
+        generationTitleInputs.forEach((input) => {
+          input.value = scriptTitleInput ? scriptTitleInput.value : "";
+        });
+        generationDurationInputs.forEach((input) => {
+          input.value = scriptDurationInput ? scriptDurationInput.value : "";
+        });
+        generationToneInputs.forEach((input) => {
+          input.value = scriptToneSelect ? scriptToneSelect.value : "";
+        });
+      };
+
+      if (scriptTitleInput) scriptTitleInput.addEventListener("input", syncGenerationInputs);
+      if (scriptDurationInput) scriptDurationInput.addEventListener("input", syncGenerationInputs);
+      if (scriptToneSelect) scriptToneSelect.addEventListener("change", syncGenerationInputs);
+      document.querySelectorAll(".generation-form").forEach((form) => {
+        form.addEventListener("submit", syncGenerationInputs);
+      });
+      syncGenerationInputs();
+    });
   </script>
 </head>
 <body>
@@ -112,14 +233,22 @@
 
     <div class="card">
       <h2>3. 生成图片提示词</h2>
-      <form action="/generate_prompts" method="post">
+      <form id="prompt_form" action="/generate_prompts" method="post">
         <div class="two-col">
-          <div><label>目的地 / 主题</label><input type="text" name="destination" value="{{ prompt_form.destination }}"></div>
+          <div><label>目的地 / 主题</label><input id="destination_input" type="text" name="destination" value="{{ prompt_form.destination }}"></div>
+          <div><label>视频时长（秒）</label><input id="video_duration_input" type="number" name="video_duration" value="{{ prompt_form.video_duration }}" min="10" max="600"></div>
+        </div>
+        <div class="two-col">
           <div><label>画幅比例</label><input type="text" name="aspect_ratio" value="{{ prompt_form.aspect_ratio }}"></div>
+          <div><label>自动规划</label><input id="timing_plan_input" type="text" value="约 {{ prompt_form.image_count }} 张图，每张约 {{ prompt_form.planned_duration_per_image }} 秒" readonly></div>
         </div>
         <label>风格关键词</label><textarea name="style_keywords">{{ prompt_form.style_keywords }}</textarea>
         <label>避免项 / 负面约束</label><textarea name="negative_keywords">{{ prompt_form.negative_keywords }}</textarea>
-        <label>镜头主题，每行一个</label><textarea name="scenes_text">{{ prompt_form.scenes_text }}</textarea>
+        <label>镜头主题，每行一个</label><textarea id="scenes_text" name="scenes_text">{{ prompt_form.scenes_text }}</textarea>
+        <div>
+          <button class="secondary" id="rewrite_scenes_button" type="button">调用 DeepSeek 重写镜头主题</button>
+          <span id="scene_status" class="small"></span>
+        </div>
         <label class="checkline"><input type="checkbox" name="use_api" {% if api_settings.text_available %}checked{% endif %}>使用文本 API 增强提示词</label>
         <button class="green" type="submit">一键生成图片提示词</button>
       </form>
@@ -137,15 +266,15 @@
       <h2>5. 设置字幕和旁白</h2>
       <form action="/save" method="post" id="scriptForm">
         <label>视频标题</label>
-        <input type="text" name="title" value="{{ data.title }}">
+        <input id="script_title_input" type="text" name="title" value="{{ data.title }}">
         <div class="two-col">
           <div>
             <label>每张图片持续秒数</label>
-            <input type="number" name="duration_per_image" value="{{ data.duration_per_image }}" min="2" max="20">
+            <input id="script_duration_input" type="number" name="duration_per_image" value="{{ data.duration_per_image }}" min="2" max="20">
           </div>
           <div>
             <label>旁白语气</label>
-            <select name="voiceover_tone">
+            <select id="script_tone_select" name="voiceover_tone">
               {% for key, item in voiceover_tones.items() %}
                 <option value="{{ key }}" {% if key == current_voiceover_tone %}selected{% endif %}>{{ item.label }}</option>
               {% endfor %}
@@ -167,24 +296,24 @@
       </form>
 
       <div class="helper-box">
-        <form action="/generate_voiceover" method="post">
+        <form class="generation-form" action="/generate_voiceover" method="post">
           <label>自动生成旁白语气</label>
           <select name="voiceover_tone">
             {% for key, item in voiceover_tones.items() %}
               <option value="{{ key }}" {% if key == current_voiceover_tone %}selected{% endif %}>{{ item.label }}</option>
             {% endfor %}
           </select>
-          <input type="hidden" name="title" value="{{ data.title }}">
-          <input type="hidden" name="duration_per_image" value="{{ data.duration_per_image }}">
+          <input class="generation-title-input" type="hidden" name="title" value="{{ data.title }}">
+          <input class="generation-duration-input" type="hidden" name="duration_per_image" value="{{ data.duration_per_image }}">
           <button class="orange" type="submit">根据图片数量和播放速度自动生成旁白/字幕</button>
         </form>
-        <form action="/generate_smart_script" method="post">
-          <input type="hidden" name="title" value="{{ data.title }}">
-          <input type="hidden" name="duration_per_image" value="{{ data.duration_per_image }}">
-          <input type="hidden" name="voiceover_tone" value="{{ current_voiceover_tone }}">
-          <button class="green" type="submit">根据上传图片内容生成旁白/字幕</button>
+        <form class="generation-form" action="/generate_smart_script" method="post">
+          <input class="generation-title-input" type="hidden" name="title" value="{{ data.title }}">
+          <input class="generation-duration-input" type="hidden" name="duration_per_image" value="{{ data.duration_per_image }}">
+          <input class="generation-tone-input" type="hidden" name="voiceover_tone" value="{{ current_voiceover_tone }}">
+          <button class="green" type="submit">调用阿里识图 + DeepSeek生成标题/旁白/字幕</button>
         </form>
-        <p class="small">会按照当前已上传图片数量生成对应行数；并根据“每张图片持续秒数”控制每句长度，尽量让朗读时间和画面时间匹配。</p>
+        <p class="small">绿色按钮会先用阿里 Qwen-VL 逐张识别图片内容，再由 DeepSeek 根据当前输入地点生成视频标题、字幕和连贯旁白；并按“每张图片持续秒数”控制每句长度，让朗读时间和画面时间匹配。</p>
       </div>
     </div>
 
