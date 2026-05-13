@@ -12,6 +12,8 @@ from moviepy.editor import (
 )
 from moviepy.audio.fx.all import audio_loop, audio_fadein, audio_fadeout
 
+from shot_sorter import load_sorted_images
+
 try:
     import edge_tts
 except ImportError:
@@ -52,7 +54,6 @@ def ensure_dirs():
 
 
 def load_script():
-    """读取 script.json。不存在时自动创建默认脚本。"""
     if not SCRIPT_FILE.exists():
         default_voiceover = (
             "有些城市，不适合匆匆走过。\n"
@@ -80,7 +81,6 @@ def load_script():
 
 
 def resize_cover(img, target_w, target_h):
-    """把图片等比例放大并裁剪成目标尺寸，避免黑边。"""
     img = img.convert("RGB")
     src_w, src_h = img.size
     src_ratio = src_w / src_h
@@ -102,7 +102,6 @@ def resize_cover(img, target_w, target_h):
 
 
 def get_font(size=SUBTITLE_FONT_SIZE):
-    """加载中文字体。Windows 优先使用微软雅黑/黑体。"""
     if size in FONT_CACHE:
         return FONT_CACHE[size]
 
@@ -125,7 +124,6 @@ def get_font(size=SUBTITLE_FONT_SIZE):
 
 
 def split_text_lines(draw, text, font, max_width):
-    """按宽度把中文字幕自动换行。"""
     lines = []
     current = ""
 
@@ -147,7 +145,6 @@ def split_text_lines(draw, text, font, max_width):
 
 
 def make_subtitle_layer(text):
-    """预生成字幕透明图层，避免每一帧重复排版。"""
     if not SHOW_SUBTITLES or not text or not text.strip():
         return None
 
@@ -178,7 +175,6 @@ def make_subtitle_layer(text):
         text_w = bbox[2] - bbox[0]
         x = (VIDEO_W - text_w) // 2
 
-        # 轻描边，提高字幕可读性。
         for dx, dy in [(-3, 0), (3, 0), (0, -3), (0, 3), (-2, -2), (2, 2)]:
             draw.text((x + dx, y + dy), line, font=font, fill=(0, 0, 0, 230))
         draw.text((x, y), line, font=font, fill=(255, 255, 255, 255))
@@ -188,7 +184,6 @@ def make_subtitle_layer(text):
 
 
 def split_voiceover_lines(data, image_count):
-    """把旁白拆成多句，尽量做到一张图对应一句旁白。"""
     voiceover_text = data.get("voiceover", "").strip()
     subtitles = data.get("subtitles", [])
 
@@ -212,7 +207,6 @@ def split_voiceover_lines(data, image_count):
 
 
 def get_subtitle_lines(data, voice_lines, image_count):
-    """优先使用 subtitles；没有字幕时，自动用旁白作为字幕。"""
     subtitles = [line.strip() for line in data.get("subtitles", []) if line.strip()]
 
     if subtitles:
@@ -232,7 +226,6 @@ def get_subtitle_lines(data, voice_lines, image_count):
 
 
 async def generate_voice_segments(lines):
-    """逐句生成旁白音频，方便让每张图片时长匹配对应句子。"""
     if edge_tts is None:
         raise ImportError("缺少 edge-tts，请先运行：pip install -r requirements.txt")
 
@@ -260,7 +253,6 @@ async def generate_voice_segments(lines):
 
 
 def get_audio_durations(segment_paths, fallback_duration):
-    """读取每段旁白时长，并给每张图留一点停顿。"""
     durations = []
     audio_clips = []
 
@@ -277,7 +269,6 @@ def get_audio_durations(segment_paths, fallback_duration):
 
 
 def make_clip(image_path, duration, mode, subtitle_text=""):
-    """把单张图片做成带运镜、可选字幕的视频片段。"""
     original = Image.open(image_path).convert("RGB")
     base = resize_cover(original, VIDEO_W, VIDEO_H)
     subtitle_layer = make_subtitle_layer(subtitle_text)
@@ -329,7 +320,6 @@ def make_clip(image_path, duration, mode, subtitle_text=""):
 
 
 def build_aligned_voice_track(audio_clips, durations):
-    """把每句旁白按对应图片时长放到时间线上，保证换图和换句尽量同步。"""
     segment_timeline = []
     current_time = 0
 
@@ -369,20 +359,23 @@ def main():
     data = load_script()
     fallback_duration = int(data.get("duration_per_image", 6))
 
-    image_files = sorted([
-        p for p in IMAGE_DIR.iterdir()
-        if p.suffix.lower() in [".jpg", ".jpeg", ".png"]
-    ])
+    # 自动镜头排序：根据图片文件名中的关键词生成电影化镜头顺序。
+    image_files = load_sorted_images(IMAGE_DIR)
 
     if not image_files:
         raise FileNotFoundError(
             "images 文件夹里没有图片。\n"
-            "请先通过网页上传图片，或者手动放入 01.jpg 到 08.jpg。"
+            "请先通过网页上传图片，或者手动放入图片文件。"
         )
 
     print(f"发现 {len(image_files)} 张图片。")
+    print("已启用自动镜头排序：远景 → 街景 → 建筑 → 人物 → 特写 → 夜景。")
     print(f"视频尺寸：{VIDEO_W}x{VIDEO_H}，横屏 16:9。")
     print("当前输出设置：自动 AI 朗读 + 自动字幕。")
+
+    print("\n镜头排序结果：")
+    for idx, img in enumerate(image_files, start=1):
+        print(f"{idx:02d}. {img.name}")
 
     voice_lines = split_voiceover_lines(data, len(image_files))
     subtitle_lines = get_subtitle_lines(data, voice_lines, len(image_files))
@@ -414,6 +407,7 @@ def main():
         "pan_down",
         "zoom_out"
     ]
+
     allowed_modes = {"zoom_in", "zoom_out", "pan_left", "pan_right", "pan_up", "pan_down", "still"}
     image_analysis = data.get("image_analysis", [])
 
@@ -422,10 +416,15 @@ def main():
         analyzed_mode = ""
         if index < len(image_analysis) and isinstance(image_analysis[index], dict):
             analyzed_mode = image_analysis[index].get("best_motion", "")
+
         mode = analyzed_mode if analyzed_mode in allowed_modes else modes[index % len(modes)]
         duration = durations[index]
         subtitle = subtitle_lines[index] if index < len(subtitle_lines) else ""
-        print(f"正在处理：{image_path.name}，运镜：{mode}，时长：{duration:.2f} 秒，字幕：{subtitle}")
+
+        print(
+            f"正在处理：{image_path.name}，运镜：{mode}，时长：{duration:.2f} 秒，字幕：{subtitle}"
+        )
+
         clips.append(make_clip(image_path, duration, mode, subtitle))
 
     final_video = concatenate_videoclips(clips, method="compose")
@@ -441,7 +440,9 @@ def main():
         audio_tracks.append(bgm_track)
 
     if audio_tracks:
-        final_video = final_video.set_audio(CompositeAudioClip(audio_tracks).set_duration(video_duration))
+        final_video = final_video.set_audio(
+            CompositeAudioClip(audio_tracks).set_duration(video_duration)
+        )
 
     print("正在导出视频...")
     final_video.write_videofile(
