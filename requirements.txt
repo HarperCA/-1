@@ -1,5 +1,0 @@
-moviepy==1.0.3
-pillow
-numpy
-edge-tts
-flask
