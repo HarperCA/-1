@@ -1,8 +1,33 @@
 __pycache__/
 *.pyc
+*.pyo
 .venv/
 venv/
 env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+secrets*.json
+credentials*.json
+token*.json
+
+# OS / editor noise.
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
 
 # Generated runtime cache. Keep folder structure only.
 generated_cache/**
@@ -11,21 +36,31 @@ generated_cache/**
 !generated_cache/**/.gitkeep
 
 # Legacy generated output locations kept ignored for old local files.
-output/*.mp4
-output/*.mov
-output/*.avi
+output/**
+!output/
+!output/.gitkeep
+history/**
+!history/
+!history/.gitkeep
+exports/
 audio/*.mp3
 audio/*.wav
+audio/*.m4a
+audio/*.aac
+audio/*.flac
+audio/*.ogg
 audio/voice_segments/
 images/*.jpg
 images/*.jpeg
 images/*.png
+images/*.webp
+images/*.gif
+images/*.bmp
 IMAGE_PROMPTS.md
 script.json
 
 # Local logs and temporary render files.
 *.log
+*.out
+*.err
 *TEMP_MPY*.mp4
-
-.DS_Store
-Thumbs.db

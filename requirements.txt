@@ -1,0 +1,7 @@
+Flask>=3.1,<4
+edge-tts>=7.0,<8
+moviepy>=2.0,<3
+numpy>=1.25
+Pillow>=9.2,<12
+imageio-ffmpeg>=0.4
+pillow-heif>=0.15
