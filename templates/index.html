@@ -1,201 +1,154 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AI旅游伪视频生成器</title>
+  <title>AI旅游图片伪视频自动生成器</title>
   <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: Arial, "Microsoft YaHei", sans-serif; background: #f4f7fb; color: #1f2328; }
-    .container { max-width: 1180px; margin: 0 auto; padding: 28px 18px 40px; }
-    h1 { margin: 0 0 8px; font-size: 32px; }
-    .topbar { background: linear-gradient(135deg, #12213a, #224a7a); color: white; border-radius: 18px; padding: 26px 24px; margin-bottom: 22px; box-shadow: 0 10px 28px rgba(18,33,58,.18); }
-    .topbar p { margin: 0; color: rgba(255,255,255,.92); line-height: 1.8; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
-    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .card { background: white; border-radius: 16px; padding: 22px; box-shadow: 0 6px 18px rgba(18,33,58,.06); margin-bottom: 18px; }
-    .card h2 { margin: 0 0 10px; font-size: 22px; }
-    label { display: block; margin: 12px 0 8px; font-weight: 700; }
-    input[type="text"], input[type="number"], textarea, select { width: 100%; border: 1px solid #d8dee7; border-radius: 12px; padding: 12px 14px; font-size: 15px; background: #fff; outline: none; }
-    textarea { min-height: 120px; resize: vertical; line-height: 1.7; }
-    input[type="file"] { width: 100%; border: 1px dashed #c4cfdd; padding: 14px; border-radius: 12px; background: #fbfcfe; }
-    button, .btn { display: inline-block; border: 0; background: #0f62fe; color: white; padding: 11px 18px; border-radius: 12px; font-size: 15px; cursor: pointer; text-decoration: none; margin-top: 14px; margin-right: 10px; }
-    button.secondary, .btn.secondary { background: #5d6b7a; }
-    button.green, .btn.green { background: #138a5b; }
-    button.danger, .btn.danger { background: #c93535; }
-    button.orange, .btn.orange { background: #c76a16; }
-    button.mini { padding: 6px 10px; border-radius: 9px; font-size: 13px; margin-top: 0; margin-right: 0; }
-    .messages { background: #fff7d7; border: 1px solid #f0dc88; padding: 12px 14px; border-radius: 12px; margin-bottom: 18px; white-space: pre-wrap; line-height: 1.7; }
-    .status { display: inline-block; padding: 6px 12px; border-radius: 999px; font-size: 13px; margin-right: 8px; margin-top: 8px; }
-    .status.ok { background: #e8f7ef; color: #177245; }
-    .status.gray { background: #eef2f6; color: #586271; }
-    .small { color: #6c7683; font-size: 13px; line-height: 1.8; }
-    ul { line-height: 1.9; margin: 10px 0 0; padding-left: 0; list-style: none; }
-    .file-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid #eef2f6; }
-    .file-name { overflow-wrap: anywhere; color: #1f2937; }
-    .inline-form { margin: 0; flex-shrink: 0; }
-    code { background: #edf2f8; padding: 2px 6px; border-radius: 6px; }
-    .prompt-output { min-height: 360px; font-family: Consolas, "Courier New", monospace; background: #fbfcff; }
-    .footer-tip { color: #6b7280; font-size: 13px; line-height: 1.8; margin-top: 8px; }
-    .helper-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px; margin: 12px 0; }
-    .checkline { display: flex; align-items: center; gap: 9px; margin: 12px 0 0; color: #394150; font-weight: 700; }
-    .checkline input { width: 18px; height: 18px; }
-    @media (max-width: 900px) { .grid, .two-col { grid-template-columns: 1fr; } .container { padding: 16px; } h1 { font-size: 26px; } .file-row { align-items: flex-start; flex-direction: column; } }
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Arial,"Microsoft YaHei",sans-serif;background:#f3f6fb;color:#172033}.container{max-width:1120px;margin:0 auto;padding:24px 16px 56px}.hero{padding:24px;border-radius:8px;background:#172033;color:#fff;margin-bottom:16px}.hero h1{margin:0 0 8px;font-size:30px;line-height:1.25}.hero p{margin:0;line-height:1.8;color:#dbe5f5}.nav{position:sticky;top:0;z-index:10;display:grid;grid-template-columns:repeat(7,1fr);gap:8px;padding:10px;background:rgba(243,246,251,.96);backdrop-filter:blur(10px);margin-bottom:16px}.nav a{display:block;text-align:center;text-decoration:none;color:#25324a;background:#fff;border:1px solid #d8e0ec;border-radius:8px;padding:10px 8px;font-weight:700;font-size:14px;white-space:nowrap}.message,.messages{display:none;position:sticky;top:68px;z-index:9;white-space:pre-wrap;line-height:1.7;border:1px solid #b8d6c6;background:#ecf8f1;color:#17613f;border-radius:8px;padding:12px 14px;margin-bottom:16px;box-shadow:0 8px 22px rgba(20,34,58,.08)}.message.error,.messages.error{border-color:#f0b7b0;background:#fff0ee;color:#a62922}.messages.ok{border-color:#b8d6c6;background:#ecf8f1;color:#17613f}.card{background:#fff;border:1px solid #e0e6ef;border-radius:8px;padding:22px;margin-bottom:18px;box-shadow:0 8px 22px rgba(20,34,58,.06);scroll-margin-top:120px}.card h2{margin:0 0 6px;font-size:24px}.card .desc{margin:0 0 16px;color:#647084;line-height:1.7}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}label{display:block;margin:14px 0 8px;font-weight:700;color:#172033}input[type="text"],input[type="number"],select,textarea{width:100%;border:1px solid #cfd8e6;border-radius:8px;padding:12px 13px;font-size:15px;color:#111827;background:#fff;outline:none}input[type="file"]{width:100%;border:1px dashed #aebbd0;border-radius:8px;padding:14px;background:#f8fafd}textarea{min-height:132px;resize:vertical;line-height:1.7}.prompt-output{min-height:380px;font-family:Consolas,"Courier New",monospace;background:#fbfcff;white-space:pre-wrap;overflow-wrap:anywhere}.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:16px}button,.btn{border:0;border-radius:8px;background:#285eea;color:#fff;cursor:pointer;display:inline-block;font-size:15px;font-weight:700;line-height:1;padding:13px 16px;text-decoration:none}button:disabled{cursor:not-allowed;opacity:.7}.btn-secondary,button.secondary{background:#5d687a}.btn-success,button.success,.btn.green{background:#188257}.btn-danger,button.danger{background:#c4362e}button.small{font-size:13px;padding:8px 10px}.note{color:#69758a;font-size:14px;line-height:1.8;margin:10px 0 0}.status{display:inline-block;border-radius:999px;padding:6px 10px;background:#edf6f1;color:#17613f;font-size:13px;font-weight:700;margin-top:8px}.progress-wrap{margin-top:18px;max-width:560px}.progress-bar-bg{width:100%;height:16px;overflow:hidden;border-radius:999px;background:#e4eaf3;border:1px solid #d5deeb}.progress-bar{width:0%;height:100%;border-radius:999px;background:#188257;transition:width .25s ease}.progress-meta{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:8px;color:#25324a;font-size:14px;line-height:1.6}#progressText{min-width:46px;text-align:right;font-weight:700;color:#188257}#progressMessage{min-width:0;overflow-wrap:anywhere}.file-list{list-style:none;padding:0;margin:12px 0 0;border:1px solid #e4eaf3;border-radius:8px;overflow:hidden}.file-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid #e4eaf3;background:#fff}.file-row:last-child{border-bottom:0}.file-name{overflow-wrap:anywhere}.file-panel{margin-top:18px;padding:18px;border:1px solid #dbe3ef;border-radius:8px;background:#f8fafc}.file-panel h3{margin:0 0 12px;font-size:19px}.file-card,.file-actions{padding:16px;border:1px solid #d8e0ec;border-radius:8px;background:#fff;margin-top:12px}.file-card p{margin:8px 0;line-height:1.7}.file-card code{display:inline-block;max-width:100%;overflow-wrap:anywhere;vertical-align:top}.video-preview{display:none;margin-top:16px;border:1px solid #d8e0ec;border-radius:8px;background:#0f172a;overflow:hidden}.video-preview video{display:block;width:100%;max-height:540px;background:#000}.history-list{display:grid;grid-template-columns:1fr;gap:12px;margin-top:14px}.history-card{border:1px solid #e2e8f0;background:#fbfcff;border-radius:8px;padding:14px;display:flex;justify-content:space-between;gap:14px;align-items:center}.history-card strong{display:block;margin-bottom:6px;color:#172033;overflow-wrap:anywhere}.history-card p{margin:4px 0;color:#6c7683;font-size:13px;line-height:1.5;overflow-wrap:anywhere}.history-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.history-actions a,.history-actions button{white-space:nowrap}.system-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}.system-item{border:1px solid #e2e8f0;background:#fbfcff;border-radius:8px;padding:12px;min-width:0}.system-item strong{display:block;margin-bottom:6px}.system-item code{display:block;white-space:pre-wrap;overflow-wrap:anywhere}.empty-history{border:1px dashed #cbd5e1;background:#f8fafc;color:#647084;border-radius:8px;padding:14px;line-height:1.7}.hidden{display:none!important}code{background:#edf2f8;border-radius:6px;padding:2px 6px}@media(max-width:820px){.nav{display:flex;overflow-x:auto;position:sticky;top:0}.nav a{flex:0 0 auto}.grid,.system-grid{grid-template-columns:1fr}.hero h1{font-size:24px}.message,.messages{top:58px}.file-row,.history-card{align-items:flex-start;flex-direction:column}.history-actions{justify-content:flex-start}}
   </style>
-  <script>
-    function copyPromptText() {
-      const textarea = document.getElementById("prompt_output");
-      if (!textarea) return;
-      textarea.select();
-      textarea.setSelectionRange(0, 999999);
-      document.execCommand("copy");
-      alert("图片提示词已复制。");
-    }
-  </script>
+  <style>
+    .dashboard-block{border:1px solid #d8e0ec;border-radius:8px;background:#fbfcff;padding:14px;margin-top:14px}
+    .dashboard-block h3{margin:0 0 10px;font-size:18px}
+    .dashboard-list{display:grid;gap:8px}
+    .dashboard-row{display:grid;grid-template-columns:130px 1fr;gap:10px;border-bottom:1px solid #e6edf6;padding:8px 0;line-height:1.55}
+    .dashboard-row:last-child{border-bottom:0}
+    .pill{display:inline-block;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:700;background:#edf2f8;color:#25324a}
+    .pill.ok{background:#ecf8f1;color:#17613f}
+    .pill.warn{background:#fff7e6;color:#9a5b00}
+    .pill.error{background:#fff0ee;color:#a62922}
+    .log-box{max-height:260px;overflow:auto;border:1px solid #e2e8f0;border-radius:8px;background:#101827;color:#dce7f7;padding:10px;font-family:Consolas,"Courier New",monospace;font-size:12px;line-height:1.6;white-space:pre-wrap}
+    @media(max-width:820px){.dashboard-row{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
   <div class="container">
-    <div class="topbar">
-      <h1>AI旅游伪视频生成器</h1>
-      <p>图片 + 自动运镜 + 中文字幕 + AI旁白 + 背景音乐 = 慢节奏文旅伪视频。<br>支持图片提示词生成、旁白字幕自动生成、AI朗读、背景音乐混音。</p>
-    </div>
+    <header class="hero">
+      <h1>AI旅游图片伪视频自动生成器</h1>
+      <p>当前版本会把图片做成自动运镜视频，并把第 4 步文案烧录为字幕、合成为旁白声音。</p>
+    </header>
 
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}<div class="messages">{% for message in messages %}{{ message }}{% if not loop.last %}\n{% endif %}{% endfor %}</div>{% endif %}
-    {% endwith %}
+    <nav class="nav">
+      <a href="#step1">1 输入地点</a><a href="#step2">2 复制提示词</a><a href="#step3">3 上传图片</a><a href="#step4">4 生成文案</a><a href="#step5">5 生成视频</a><a href="#step6">6 历史记录</a><a href="#system">后端系统</a>
+    </nav>
 
-    <div class="card">
-      <h2>API 接入状态</h2>
-      <div>
-        {% if api_settings.text_available %}<span class="status ok">DeepSeek 文本已就绪</span>{% else %}<span class="status gray">DeepSeek 未配置</span>{% endif %}
-        {% if api_settings.vision_available %}<span class="status ok">Qwen-VL 看图已就绪</span>{% else %}<span class="status gray">Qwen-VL 未配置</span>{% endif %}
-        <span class="status gray">文本模型：{{ api_settings.text_model or "未设置" }}</span>
-        <span class="status gray">视觉模型：{{ api_settings.vision_model or "未设置" }}</span>
-      </div>
-      <p class="small">{{ api_status }}</p>
-      <p class="small">示例：<code>DEEPSEEK_API_KEY=你的Key</code>、<code>DASHSCOPE_API_KEY=你的Key</code>。图片生成仍在外部工具完成，本项目不会调用生图 API。</p>
-    </div>
+    <div id="messageBox" class="messages" style="display:none;"></div>
 
-    <div class="grid">
-      <div class="card">
-        <h2>1. 上传图片</h2>
-        <form action="/upload" method="post" enctype="multipart/form-data">
-          <label>选择多张图片，支持分批追加上传</label>
-          <input type="file" name="images" multiple accept=".jpg,.jpeg,.png,image/jpeg,image/png">
-          <button type="submit">上传图片</button>
-        </form>
-        <div>{% if image_files %}<span class="status ok">已加载 {{ image_files|length }} 张图片</span>{% else %}<span class="status gray">当前还没有图片</span>{% endif %}</div>
-        <p class="small">当前图片列表：</p>
-        <ul>
-          {% for file in image_files %}
-            <li class="file-row"><span class="file-name">{{ file }}</span><form class="inline-form" action="/delete_image" method="post" onsubmit="return confirm('确定删除这张图片吗？');"><input type="hidden" name="filename" value="{{ file }}"><button class="danger mini" type="submit">删除</button></form></li>
-          {% endfor %}
-          {% if not image_files %}<li class="small">暂无图片</li>{% endif %}
-        </ul>
-        {% if image_files %}<form action="/clear_images" method="post" onsubmit="return confirm('确定清空全部已上传图片吗？');"><button class="danger" type="submit">清空全部图片</button></form>{% endif %}
-      </div>
+    <section class="card" id="step1">
+      <h2>第 1 步：输入地点</h2>
+      <p class="desc">填写目的地、风格和镜头主题，系统会先规划旅行时间线、地点路线和旁白意图，再生成有连续镜头感的真实摄影图片提示词，并保存为 <code>IMAGE_PROMPTS.md</code>。</p>
+      <div class="grid"><div><label for="destination">目的地 / 主题</label><input id="destination" type="text" value="{{ prompt_form.destination }}" placeholder="例如：桂林山水、泉州古城、杭州西湖"></div><div><label for="aspect_ratio">画幅比例</label><input id="aspect_ratio" type="text" value="{{ prompt_form.aspect_ratio or '16:9' }}"></div></div>
+      <div class="grid"><div><label for="localImageCount">提示词 / 生图镜头数量</label><input id="localImageCount" type="number" value="8" min="1" max="12" step="1"></div></div>
+      <label><input id="useWebSearch" type="checkbox" checked> 联网检索目的地事实</label>
+      <div class="grid"><div><label for="webSearchQuery">检索关键词，可留空使用目的地</label><input id="webSearchQuery" type="text" placeholder="例如：泉州古城 景点 建筑 风貌"></div></div>
+      <p class="note">开启后会先检索真实地点资料，再让 DeepSeek 按检索到的地标、街区、自然风貌和地方文化生成提示词；检索失败时会继续使用当前输入生成。</p>
+      <div id="webSearchSummary"></div>
+      <label for="referenceImageInput">现实参考图片，可选，可多选上传</label><input id="referenceImageInput" type="file" multiple accept=".jpg,.jpeg,.png,.webp,.bmp,.tif,.tiff,image/jpeg,image/png,image/webp,image/bmp,image/tiff">
+      <p class="note">可一次选择多张现实照片，最多参考 12 张，支持 jpg、png、webp、bmp、tif/tiff。上传后会先调用阿里 Qwen-VL 分析画面，再让 DeepSeek 按这些真实主体、构图、色调和氛围生成图片提示词；参考图不会保存到最终视频素材 images/。</p>
+      <div id="referenceAnalysisSummary"></div>
+      <label for="style_keywords">风格关键词</label><textarea id="style_keywords">{{ prompt_form.style_keywords }}</textarea>
+      <label for="negative_keywords">避免项 / 负面约束</label><textarea id="negative_keywords">{{ prompt_form.negative_keywords }}</textarea>
+      <label for="scenes_text">镜头主题，每行一个，可留空让系统按地点生成</label><textarea id="scenes_text">{{ prompt_form.scenes_text }}</textarea>
+      <p id="promptCountNote" class="note"></p>
+      <div class="actions"><button id="generatePromptsBtn" class="success" type="button">生成图片提示词，然后进入第 2 步</button><a class="btn btn-secondary" href="#step2">查看第 2 步</a></div>
+    </section>
 
-      <div class="card">
-        <h2>2. 上传背景音乐</h2>
-        <form action="/upload_bgm" method="post" enctype="multipart/form-data">
-          <label>选择 MP3 文件，可选</label>
-          <input type="file" name="bgm" accept=".mp3,audio/mpeg">
-          <button type="submit">上传背景音乐</button>
-        </form>
-        <div>
-          {% if bgm_exists %}<span class="status ok">背景音乐已就绪：audio/bgm.mp3</span>{% else %}<span class="status gray">当前没有背景音乐</span>{% endif %}
-          {% if voice_exists %}<span class="status ok">旁白文件存在：audio/voice.mp3</span>{% else %}<span class="status gray">旁白将在生成视频时自动创建</span>{% endif %}
-        </div>
-        <p class="small">上传后会保存为 <code>audio/bgm.mp3</code>。生成视频时会自动与 AI 旁白混音。</p>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>3. 生成图片提示词</h2>
-      <form action="/generate_prompts" method="post">
-        <div class="two-col">
-          <div><label>目的地 / 主题</label><input type="text" name="destination" value="{{ prompt_form.destination }}"></div>
-          <div><label>画幅比例</label><input type="text" name="aspect_ratio" value="{{ prompt_form.aspect_ratio }}"></div>
-        </div>
-        <label>风格关键词</label><textarea name="style_keywords">{{ prompt_form.style_keywords }}</textarea>
-        <label>避免项 / 负面约束</label><textarea name="negative_keywords">{{ prompt_form.negative_keywords }}</textarea>
-        <label>镜头主题，每行一个</label><textarea name="scenes_text">{{ prompt_form.scenes_text }}</textarea>
-        <label class="checkline"><input type="checkbox" name="use_api" {% if api_settings.text_available %}checked{% endif %}>使用文本 API 增强提示词</label>
-        <button class="green" type="submit">一键生成图片提示词</button>
-      </form>
-      <p class="footer-tip">这里生成的是给图片生成工具使用的提示词，不是在本项目里直接出图。</p>
-    </div>
-
-    <div class="card">
-      <h2>4. 图片提示词结果</h2>
+    <section class="card" id="step2">
+      <h2>第 2 步：复制提示词</h2>
+      <p class="desc">复制下面提示词，到你常用的图片生成工具里生成图片；也可以直接调用本地 Stable Diffusion WebUI API，自动保存到 <code>images/</code>。</p>
       <textarea id="prompt_output" class="prompt-output" readonly>{{ prompt_output }}</textarea>
-      <div><button type="button" onclick="copyPromptText()">复制提示词</button></div>
-      <p class="small">生成后也会自动保存到项目根目录的 <code>IMAGE_PROMPTS.md</code>。</p>
-    </div>
+      <div class="grid"><div><label for="openaiImageNote">保存位置</label><input id="openaiImageNote" type="text" value="images/ 自动编号为 PNG" readonly></div></div>
+      <div class="actions"><button id="copyPromptsBtn" type="button">复制提示词</button><button id="generateOpenAIImagesBtn" class="success" type="button">调用 OpenAI 生成图片到 images</button><button id="generateLocalImagesBtn" class="success" type="button">调用本地模型生成图片到 images</button><a class="btn btn-success" href="#step3">我已经生成图片，进入第 3 步</a></div>
+      <p class="note">本地生图默认调用 <code>http://127.0.0.1:7860/sdapi/v1/txt2img</code>，需要 Stable Diffusion WebUI 使用 <code>--api</code> 启动。可选配置：<code>LOCAL_IMAGE_BASE_URL</code>、<code>LOCAL_IMAGE_WIDTH</code>、<code>LOCAL_IMAGE_HEIGHT</code>、<code>LOCAL_IMAGE_STEPS</code>、<code>LOCAL_IMAGE_CFG_SCALE</code>、<code>LOCAL_IMAGE_SAMPLER</code>、<code>LOCAL_IMAGE_NEGATIVE_PROMPT</code>。</p>
+    </section>
 
-    <div class="card">
-      <h2>5. 设置字幕和旁白</h2>
-      <form action="/save" method="post" id="scriptForm">
-        <label>视频标题</label>
-        <input type="text" name="title" value="{{ data.title }}">
-        <div class="two-col">
-          <div>
-            <label>每张图片持续秒数</label>
-            <input type="number" name="duration_per_image" value="{{ data.duration_per_image }}" min="2" max="20">
-          </div>
-          <div>
-            <label>旁白语气</label>
-            <select name="voiceover_tone">
-              {% for key, item in voiceover_tones.items() %}
-                <option value="{{ key }}" {% if key == current_voiceover_tone %}selected{% endif %}>{{ item.label }}</option>
-              {% endfor %}
-            </select>
-          </div>
-        </div>
-        <label>字幕，每行一句，对应一张图片。可留空，系统会用旁白作为字幕。</label>
-        <textarea name="subtitles">{{ data.subtitles | join('\n') }}</textarea>
-        <label>AI旁白文本，每行一句，对应一张图片</label>
-        <textarea name="voiceover">{{ data.voiceover }}</textarea>
-        {% if data.xiaohongshu_title or data.video_description or data.image_order_advice %}
-          <div class="helper-box">
-            {% if data.xiaohongshu_title %}<p class="small"><strong>小红书标题：</strong>{{ data.xiaohongshu_title }}</p>{% endif %}
-            {% if data.video_description %}<p class="small"><strong>视频简介：</strong>{{ data.video_description }}</p>{% endif %}
-            {% if data.image_order_advice %}<p class="small"><strong>图片顺序建议：</strong>{{ data.image_order_advice }}</p>{% endif %}
-          </div>
-        {% endif %}
-        <button type="submit">保存脚本</button>
-      </form>
+    <section class="card" id="step3">
+      <h2>第 3 步：上传图片</h2>
+      <p class="desc">可以一次选择多张，也可以分批追加上传，支持 jpg、png、webp、bmp、tif/tiff。新图片会自动保存为 <code>01.jpg</code>、<code>02.jpg</code> 这种顺序编号。</p>
+      <label for="imageInput">选择图片</label><input id="imageInput" type="file" multiple accept=".jpg,.jpeg,.png,.webp,.bmp,.tif,.tiff,image/jpeg,image/png,image/webp,image/bmp,image/tiff">
+      <div class="actions"><button id="uploadImagesBtn" type="button">上传图片</button><a class="btn btn-secondary" href="#step4">图片已上传，进入第 4 步</a></div>
+      <div id="imageSummary"></div><div id="imageListWrap"></div>
+      <div class="actions"><button id="clearImagesBtn" class="danger hidden" type="button">清空全部图片</button></div>
+    </section>
 
-      <div class="helper-box">
-        <form action="/generate_voiceover" method="post">
-          <label>自动生成旁白语气</label>
-          <select name="voiceover_tone">
-            {% for key, item in voiceover_tones.items() %}
-              <option value="{{ key }}" {% if key == current_voiceover_tone %}selected{% endif %}>{{ item.label }}</option>
-            {% endfor %}
-          </select>
-          <input type="hidden" name="title" value="{{ data.title }}">
-          <input type="hidden" name="duration_per_image" value="{{ data.duration_per_image }}">
-          <button class="orange" type="submit">根据图片数量和播放速度自动生成旁白/字幕</button>
-        </form>
-        <form action="/generate_smart_script" method="post">
-          <input type="hidden" name="title" value="{{ data.title }}">
-          <input type="hidden" name="duration_per_image" value="{{ data.duration_per_image }}">
-          <input type="hidden" name="voiceover_tone" value="{{ current_voiceover_tone }}">
-          <button class="green" type="submit">根据上传图片内容生成旁白/字幕</button>
-        </form>
-        <p class="small">会按照当前已上传图片数量生成对应行数；并根据“每张图片持续秒数”控制每句长度，尽量让朗读时间和画面时间匹配。</p>
-      </div>
-    </div>
+    <section class="card" id="step4">
+      <h2>第 4 步：生成文案</h2>
+      <p class="desc">AI 会按目的地、图片数量、语气，以及第 1 步规划好的时间线和地点顺序生成脚本；生成视频时，原生引擎会按每句朗读的实际时长决定对应画面时长。</p>
+      <label for="title">视频标题 / 目的地</label><input id="title" type="text" value="{{ data.title }}" placeholder="例如：桂林山水">
+      <div class="grid"><div><label for="duration_per_image">无朗读时的兜底秒数</label><input id="duration_per_image" type="number" value="{{ data.duration_per_image or 6 }}" min="1" step="0.5"><p class="note">有朗读音频时，画面按对应朗读真实时长自动变化；这个值只用于文案长短建议和无音频兜底。</p></div><div><label for="tone_label">文案语气风格</label><select id="tone_label"><option value="治愈文艺">治愈文艺</option><option value="纪录片旁白">纪录片旁白</option><option value="小红书种草">小红书种草</option><option value="抖音短视频">抖音短视频</option><option value="城市漫游">城市漫游</option><option value="沉稳宣传片">沉稳宣传片</option></select></div></div>
+      <label for="subtitles">字幕文案，每行一句</label><textarea id="subtitles" placeholder="点击 AI 生成字幕/旁白，会按图片数量生成相同行数。">{{ data.subtitles | join('\n') }}</textarea>
+      <label for="voiceover">旁白文本，每行一句</label><textarea id="voiceover" placeholder="生成视频时会用系统语音合成为旁白音轨。">{{ data.voiceover }}</textarea>
+      <div class="actions"><button id="generateScriptBtn" class="success" type="button">AI 生成字幕/旁白</button><button id="saveScriptBtn" type="button">保存文案</button><a class="btn btn-success" href="#step5">进入第 5 步</a></div>
+    </section>
 
-    <div class="card">
-      <h2>6. 生成视频</h2>
-      <form action="/generate" method="post">
-        <button class="green" type="submit">开始生成 final.mp4</button>
-        {% if has_output %}<a class="btn secondary" href="/download">下载 final.mp4</a>{% endif %}
-      </form>
-      <p class="small">生成过程会调用 <code>main.py</code>，自动生成 <code>audio/voice.mp3</code> 与 <code>output/final.mp4</code>。</p>
-    </div>
-  </div>
+    <section class="card" id="step5">
+      <h2>第 5 步：生成视频</h2>
+      <p class="desc">点击后会调用 <code>main.py</code>，从 <code>images/</code> 读取图片。原生引擎会让每个画面跟随同序号字幕/朗读时长，并导出 <code>output/final.mp4</code>。</p>
+      <label for="video_engine">视频生成引擎</label><select id="video_engine"><option value="native">项目原生电影感剪辑（字幕/旁白同步）</option><option value="kburns-slideshow">kburns-slideshow 运镜幻灯片（固定时长）</option><option value="3d-ken-burns">3d-ken-burns 单图 3D 视差（固定时长）</option></select>
+      <div class="actions"><button id="generateVideoBtn" class="success" type="button">开始生成 final.mp4</button></div>
+      <div class="progress-wrap"><div class="progress-bar-bg"><div id="progressBar" class="progress-bar"></div></div><div class="progress-meta"><div id="progressMessage">等待开始生成...</div><div id="progressText">0%</div></div></div>
+      <div id="filePanel" class="file-panel" style="display:none"><h3>生成的视频文件</h3><div class="file-card"><p><strong>文件名：</strong><span id="outputFileName">final.mp4</span></p><p><strong>相对路径：</strong><code id="outputRelativePath">output/final.mp4</code></p><p><strong>本地路径：</strong><code id="outputAbsolutePath"></code></p><p><strong>文件大小：</strong><span id="outputFileSize"></span></p><div class="actions"><a id="previewVideoBtn" class="btn green" href="/preview_video">直接打开/预览</a><a id="downloadBtn" class="btn btn-secondary" href="/download">下载 final.mp4</a><button type="button" onclick="copyOutputPath()">复制文件路径</button><button type="button" onclick="copyDownloadLink()">复制下载链接</button></div><div id="videoPreviewWrap" class="video-preview"><video id="previewVideo" controls preload="metadata"></video></div></div><div class="file-actions"><label for="targetDir">复制/移动到指定文件夹，可留空，默认 exports 文件夹</label><input type="text" id="targetDir" placeholder="例如：C:\Users\你的用户名\Desktop"><div class="actions"><button id="copyOutputFileBtn" type="button" onclick="copyOutputFile()">复制到该文件夹</button><button id="moveOutputFileBtn" type="button" class="danger" onclick="moveOutputFile()">移动到该文件夹</button></div><p class="note">移动后项目输出目录里的 <code>output/final.mp4</code> 将不再保留；复制不会删除原文件。</p></div></div>
+    </section>
+
+    <section class="card" id="step6">
+      <h2>第 6 步：历史记录</h2>
+      <p class="desc">这里会保存你每次生成成功的视频，避免 <code>final.mp4</code> 被新视频覆盖后找不到旧版本。</p>
+      <div class="actions"><button type="button" onclick="refreshHistory()">刷新历史记录</button><button type="button" class="danger" onclick="clearHistory()">清空全部历史记录</button></div>
+      <div id="historyList" class="history-list"></div>
+    </section>
+
+    <section class="card" id="system">
+      <h2>后端系统</h2>
+      <p class="desc">查看视频生成进度、API 调用、内容合规检查和当前系统日志。</p>
+      <div class="actions"><button type="button" onclick="refreshBackendSystem()">刷新后端系统</button></div>
+      <div id="backendSystem"></div>
+    </section>  </div>
+
+  <script>
+    const messageEl=document.getElementById("messageBox")||document.getElementById("message"),promptOutputEl=document.getElementById("prompt_output"),referenceImageInputEl=document.getElementById("referenceImageInput"),referenceAnalysisSummaryEl=document.getElementById("referenceAnalysisSummary"),webSearchSummaryEl=document.getElementById("webSearchSummary"),imageInputEl=document.getElementById("imageInput"),imageSummaryEl=document.getElementById("imageSummary"),imageListWrapEl=document.getElementById("imageListWrap"),clearImagesBtn=document.getElementById("clearImagesBtn"),filePanelEl=document.getElementById("filePanel"),previewVideoBtn=document.getElementById("previewVideoBtn"),previewVideoWrapEl=document.getElementById("videoPreviewWrap"),previewVideoEl=document.getElementById("previewVideo"),downloadBtn=document.getElementById("downloadBtn"),historyListEl=document.getElementById("historyList"),backendSystemEl=document.getElementById("backendSystem");
+    let progressTimer=null,messageTimer=null,currentImageFiles={{ image_files | tojson }};
+    function showMessage(text,ok=true){if(!messageEl)return;if(messageTimer){clearTimeout(messageTimer);messageTimer=null}messageEl.textContent=text||"";messageEl.style.display=text?"block":"none";messageEl.className=ok?"messages ok":"messages error";if(text){messageTimer=setTimeout(()=>{messageEl.style.display="none";messageEl.textContent="";messageTimer=null},5000)}}
+    async function readJsonResponse(response){const result=await response.json().catch(()=>({ok:false,message:"服务器返回了无法解析的响应。",data:{}}));if(!response.ok&&result.ok!==false)result.ok=false;return result}
+    function setButtonLoading(button,loadingText){const oldText=button.textContent;button.disabled=true;button.textContent=loadingText;return()=>{button.disabled=false;button.textContent=oldText}}
+    function goStep(id){const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:"smooth",block:"start"})}function scrollToStep(stepId){goStep(stepId)}
+    function escapeHtml(value){return String(value).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
+    async function copyText(text,successMessage){try{await navigator.clipboard.writeText(text);showMessage(successMessage)}catch(error){const helper=document.createElement("textarea");helper.value=text;helper.style.position="fixed";helper.style.left="-9999px";document.body.appendChild(helper);helper.select();document.execCommand("copy");document.body.removeChild(helper);showMessage(successMessage)}}
+    function renderImageList(imageFiles){const files=imageFiles||[];currentImageFiles=files;imageSummaryEl.innerHTML=files.length?`<span class="status">当前已上传 ${files.length} 张图片</span>`:`<p class="note">当前还没有上传图片。</p>`;clearImagesBtn.classList.toggle("hidden",files.length===0);if(!files.length){imageListWrapEl.innerHTML="";return}const rows=files.map(filename=>`<li class="file-row"><span class="file-name">${escapeHtml(filename)}</span><button class="danger small" type="button" data-delete-image="${escapeHtml(filename)}">删除</button></li>`).join("");imageListWrapEl.innerHTML=`<ul class="file-list">${rows}</ul>`}
+    function absoluteUrl(url){return new URL(url,window.location.origin).href}
+    function renderOutputFileInfo(file){if(!file||!file.exists){filePanelEl.style.display="none";hideVideoPreview();return}filePanelEl.style.display="block";document.getElementById("outputFileName").textContent=file.filename;document.getElementById("outputRelativePath").textContent=file.relative_path;document.getElementById("outputAbsolutePath").textContent=file.absolute_path;document.getElementById("outputFileSize").textContent=`${file.size_mb} MB`;const previewUrl=absoluteUrl(file.preview_url);previewVideoBtn.href=previewUrl;downloadBtn.href=file.download_url;if(previewVideoEl&&previewVideoEl.dataset.source!==previewUrl){previewVideoEl.src=previewUrl;previewVideoEl.dataset.source=previewUrl;previewVideoEl.load()}if(previewVideoWrapEl)previewVideoWrapEl.style.display="block"}
+    function hideVideoPreview(){if(previewVideoEl){previewVideoEl.pause();previewVideoEl.removeAttribute("src");previewVideoEl.dataset.source="";previewVideoEl.load()}if(previewVideoWrapEl)previewVideoWrapEl.style.display="none"}
+    function previewVideo(event){event.preventDefault();const url=absoluteUrl(previewVideoBtn.href);if(!url){showMessage("还没有可预览的视频。",false);return}if(!previewVideoEl||!previewVideoWrapEl){window.open(url,"_blank");return}if(previewVideoEl.dataset.source!==url){previewVideoEl.src=url;previewVideoEl.dataset.source=url;previewVideoEl.load()}previewVideoWrapEl.style.display="block";previewVideoEl.play().catch(()=>{});previewVideoWrapEl.scrollIntoView({behavior:"smooth",block:"nearest"})}
+    function updateProgress(percent,message){percent=Math.max(0,Math.min(100,Number(percent)||0));document.getElementById("progressBar").style.width=percent+"%";document.getElementById("progressText").textContent=percent+"%";document.getElementById("progressMessage").textContent=message||""}
+    function stopProgressTimer(){if(progressTimer){clearInterval(progressTimer);progressTimer=null}}
+    async function refreshOutputFileInfo(){try{const response=await fetch("/api/output_file_info"),result=await readJsonResponse(response);if(!result.ok||!result.data||!result.data.exists){filePanelEl.style.display="none";return}renderOutputFileInfo(result.data)}catch(error){showMessage(`读取视频文件状态失败：${error.message}`,false)}}
+    function renderHistory(records){const list=records||[];if(!list.length){historyListEl.innerHTML=`<div class="empty-history">暂无历史视频，生成视频后会自动保存在这里。</div>`;return}historyListEl.innerHTML=list.map(record=>`<div class="history-card"><div><strong>${escapeHtml(record.title||"未命名视频")}</strong><p>生成时间：${escapeHtml(record.created_at||"")}</p><p>文件名：${escapeHtml(record.filename||"")}</p><p>位置：${escapeHtml(record.relative_path||"")}</p><p>大小：${escapeHtml(record.size_mb||"0.00")} MB ｜ 图片：${escapeHtml(record.image_count||0)} 张 ｜ 参考镜头：${escapeHtml(record.duration_per_image||"")} 秒</p></div><div class="history-actions"><a class="btn green small" href="${escapeHtml(record.preview_url)}" target="_blank" rel="noopener">预览</a><a class="btn btn-secondary small" href="${escapeHtml(record.download_url)}">下载</a><button class="danger small" type="button" onclick="deleteHistoryVideo('${escapeHtml(record.id)}')">删除</button></div></div>`).join("")}
+    function pillClass(value){if(value===true||value==="通过"||value==="INFO"||value==="200")return"ok";if(value==="ERROR"||value==="拦截")return"error";if(value==="WARN"||value==="需要复核")return"warn";return""}
+    function renderRows(rows){return `<div class="dashboard-list">${rows.map(row=>`<div class="dashboard-row"><strong>${escapeHtml(row[0])}</strong><div>${row[1]}</div></div>`).join("")}</div>`}
+    function renderBackendSystem(data){if(!backendSystemEl)return;const system=data.system||data||{},generation=data.generation||{},compliance=data.compliance||{},apiCalls=data.api_calls||[],logs=data.logs||[];const systemRows=[["操作系统",escapeHtml(`${system.os||"Unknown"} ${system.os_release||""}`.trim())],["系统版本",escapeHtml(system.os_version||"-")],["硬件架构",escapeHtml(system.machine||"-")],["Python 版本",escapeHtml(system.python_version||"-")],["项目目录",`<code>${escapeHtml(system.project_dir||"-")}</code>`]];const generationRows=[["运行状态",`<span class="pill ${generation.running?"warn":"ok"}">${generation.running?"生成中":"空闲"}</span>`],["生成进度",`${escapeHtml(generation.percent??0)}%`],["当前消息",escapeHtml(generation.message||"暂无生成任务")],["错误信息",escapeHtml(generation.error||"-")]];const complianceRows=[["合规状态",`<span class="pill ${pillClass(compliance.status)}">${escapeHtml(compliance.status||"未知")}</span>`],["检查说明",escapeHtml(compliance.message||"-")],["图片数量",escapeHtml(compliance.image_file_count??0)],["最近事件",(compliance.last_checks||[]).slice(0,5).map(item=>`${escapeHtml(item.time)} <span class="pill ${pillClass(item.status)}">${escapeHtml(item.status)}</span> ${escapeHtml(item.source)}：${escapeHtml(item.message)}`).join("<br>")||"暂无合规检查记录"]];const apiHtml=apiCalls.slice(0,12).map(item=>`<div class="dashboard-row"><strong>${escapeHtml(item.time)}</strong><div><span class="pill ${item.ok?"ok":"error"}">${escapeHtml(item.status_code)}</span> ${escapeHtml(item.method)} ${escapeHtml(item.path)} · ${escapeHtml(item.duration_ms)}ms</div></div>`).join("")||`<div class="note">暂无 API 调用记录。</div>`;const logHtml=logs.slice().reverse().map(item=>`[${escapeHtml(item.time||"")}] ${escapeHtml(item.level||"INFO")} ${escapeHtml(item.message||"")}`).join("\n")||"暂无系统日志。";backendSystemEl.innerHTML=`<div class="dashboard-block"><h3>运行环境</h3>${renderRows(systemRows)}</div><div class="dashboard-block"><h3>视频生成进度</h3>${renderRows(generationRows)}</div><div class="dashboard-block"><h3>内容合规检查</h3>${renderRows(complianceRows)}</div><div class="dashboard-block"><h3>API 调用记录</h3><div class="dashboard-list">${apiHtml}</div></div><div class="dashboard-block"><h3>系统日志</h3><div class="log-box">${logHtml}</div></div>`}
+    async function refreshBackendSystem(){try{const response=await fetch("/api/backend_dashboard"),result=await readJsonResponse(response);if(!result.ok){showMessage(result.message||"读取后端系统失败。",false);return}renderBackendSystem(result.data||{});showMessage(result.message,true)}catch(error){showMessage(`读取后端系统失败：${error.message}`,false)}}
+    async function refreshHistory(){try{const response=await fetch("/api/history"),result=await readJsonResponse(response);if(!result.ok){showMessage(result.message||"读取历史记录失败。",false);return}renderHistory(result.data&&result.data.records||[])}catch(error){showMessage(`读取历史记录失败：${error.message}`,false)}}
+    async function deleteHistoryVideo(videoId){if(!confirm("确定删除这个历史视频吗？不会删除 output/final.mp4。"))return;const formData=new FormData();formData.append("video_id",videoId);try{const response=await fetch("/api/history/delete",{method:"POST",body:formData}),result=await readJsonResponse(response);showMessage(result.message,result.ok);if(result.data&&result.data.records)renderHistory(result.data.records)}catch(error){showMessage(`删除历史视频失败：${error.message}`,false)}}
+    async function clearHistory(){if(!confirm("确定清空全部历史记录吗？这只会删除 history/videos 里的历史副本，不会删除 output/final.mp4。"))return;try{const response=await fetch("/api/history/clear",{method:"POST"}),result=await readJsonResponse(response);showMessage(result.message,result.ok);renderHistory(result.data&&result.data.records||[])}catch(error){showMessage(`清空历史记录失败：${error.message}`,false)}}
+    async function refreshStatus(){try{const response=await fetch("/api/status"),result=await readJsonResponse(response);if(!result.ok){showMessage(result.message||"状态刷新失败。",false);return}const data=result.data||{};renderImageList(data.image_files||[]);renderOutputFileInfo(data.output_file);if(data.backend_dashboard)renderBackendSystem(data.backend_dashboard);else if(data.backend_system)renderBackendSystem({system:data.backend_system});if(typeof data.prompt_output==="string"&&!promptOutputEl.value)promptOutputEl.value=data.prompt_output;const script=data.script||{};if(script.title!==undefined)document.getElementById("title").value=script.title||"";if(script.duration_per_image!==undefined)document.getElementById("duration_per_image").value=script.duration_per_image||6;if(Array.isArray(script.subtitles))document.getElementById("subtitles").value=script.subtitles.join("\n");if(script.voiceover!==undefined)document.getElementById("voiceover").value=script.voiceover||"";if(script.tone_label!==undefined)document.getElementById("tone_label").value=script.tone_label||"治愈文艺";if(script.video_engine!==undefined)document.getElementById("video_engine").value=script.video_engine||"native"}catch(error){showMessage(`状态加载失败：${error.message}，可刷新页面重试。`,false)}}
+    function getSceneCount(){return document.getElementById("scenes_text").value.split("\n").map(line=>line.trim()).filter(Boolean).length}function getDestination(){return document.getElementById("destination").value.trim()||document.getElementById("title").value.trim()}function clampImageCount(value){return Math.max(1,Math.min(12,Number(value)||0))}function getPromptImageCount(){const localCount=Number(document.getElementById("localImageCount").value)||0;return clampImageCount(localCount||getSceneCount()||8)}function countTextPromptBlocks(text){let count=0,inBlock=false,hasContent=false;for(const rawLine of (text||"").split(/\r?\n/)){const line=rawLine.trim();if(line.startsWith("```")){if(inBlock){if(hasContent)count++;inBlock=false;hasContent=false}else{inBlock=line.toLowerCase()==="```text"}continue}if(inBlock&&line)hasContent=true}return count}function getGeneratedPromptCount(){return countTextPromptBlocks(promptOutputEl.value)||getPromptImageCount()}function getImageCount(){const localCount=Number(document.getElementById("localImageCount").value)||0;return currentImageFiles.length||localCount||getSceneCount()||8}function updatePromptCountNote(){const note=document.getElementById("promptCountNote");if(!note)return;const promptCount=getPromptImageCount(),sceneCount=getSceneCount();let text=`将生成 ${promptCount} 个提示词镜头。`;if(sceneCount&&sceneCount!==promptCount)text+=` 当前镜头主题为 ${sceneCount} 行，生成时会按 ${promptCount} 个镜头自动${sceneCount<promptCount?"补齐":"截断/改写"}。`;else if(sceneCount)text+=` 当前镜头主题数量一致。`;else text+=" 未填写镜头主题时，系统会按地点自动规划。";note.textContent=text}
+    function renderReferenceAnalysis(items){const list=items||[];if(!referenceAnalysisSummaryEl)return;if(!list.length){referenceAnalysisSummaryEl.innerHTML="";return}referenceAnalysisSummaryEl.innerHTML=`<div class="file-panel"><h3>参考图分析</h3><ul class="file-list">${list.map((item,index)=>`<li class="file-row"><span class="file-name">${index+1}. ${escapeHtml(item.scene_type||"参考图")}：${escapeHtml(item.visual_summary||"")}</span><span class="status">${escapeHtml(item.best_motion||"")}</span></li>`).join("")}</ul></div>`}
+    function renderWebSearchSummary(payload){if(!webSearchSummaryEl)return;const data=payload||{};const results=data.results||[];if(!data.enabled){webSearchSummaryEl.innerHTML="";return}if(data.warning&&!data.used){webSearchSummaryEl.innerHTML=`<p class="note">联网检索不可用：${escapeHtml(data.warning)}</p>`;return}if(!results.length){webSearchSummaryEl.innerHTML="";return}webSearchSummaryEl.innerHTML=`<div class="file-panel"><h3>联网检索参考</h3><ul class="file-list">${results.map(item=>`<li class="file-row"><span class="file-name"><strong>${escapeHtml(item.title||"检索结果")}</strong><br>${escapeHtml(item.snippet||"")}</span></li>`).join("")}</ul></div>`}
+    async function generatePrompts(){const button=document.getElementById("generatePromptsBtn"),promptCount=getPromptImageCount(),hasReference=referenceImageInputEl&&referenceImageInputEl.files.length>0,useWebSearch=document.getElementById("useWebSearch").checked,restore=setButtonLoading(button,useWebSearch||hasReference?"正在检索/分析并生成提示词...":"正在生成提示词...");const formData=new FormData();formData.append("destination",getDestination());formData.append("aspect_ratio",document.getElementById("aspect_ratio").value);formData.append("style_keywords",document.getElementById("style_keywords").value);formData.append("negative_keywords",document.getElementById("negative_keywords").value);formData.append("scenes_text",document.getElementById("scenes_text").value);formData.append("duration_per_image",document.getElementById("duration_per_image").value);formData.append("image_count",promptCount);if(useWebSearch){formData.append("use_web_search","1");formData.append("web_search_query",document.getElementById("webSearchQuery").value)}if(hasReference)Array.from(referenceImageInputEl.files).forEach(file=>formData.append("reference_images",file));try{const response=await fetch("/api/generate_prompts",{method:"POST",body:formData}),result=await readJsonResponse(response);showMessage(result.message,result.ok);renderReferenceAnalysis(result.data&&result.data.reference_analysis||[]);renderWebSearchSummary(result.data&&result.data.web_search||{});if(result.ok){promptOutputEl.value=result.data.prompt_output||"";updatePromptCountNote();scrollToStep("step2")}}catch(error){showMessage(`生成失败：${error.message}`,false)}finally{restore()}}
+    async function generateScript(){const button=document.getElementById("generateScriptBtn"),restore=setButtonLoading(button,"正在生成文案...");const formData=new FormData();formData.append("destination",getDestination());formData.append("duration_per_image",document.getElementById("duration_per_image").value);formData.append("tone_label",document.getElementById("tone_label").value);formData.append("image_count",getImageCount());try{const response=await fetch("/api/generate_script",{method:"POST",body:formData}),result=await readJsonResponse(response);showMessage(result.message,result.ok);if(result.ok){const script=result.data.script||{};document.getElementById("title").value=script.title||getDestination();document.getElementById("duration_per_image").value=script.duration_per_image||6;document.getElementById("subtitles").value=Array.isArray(script.subtitles)?script.subtitles.join("\n"):"";document.getElementById("voiceover").value=script.voiceover||""}}catch(error){showMessage(`文案生成失败：${error.message}`,false)}finally{restore()}}
+    async function generateOpenAIImages(){const button=document.getElementById("generateOpenAIImagesBtn"),text=promptOutputEl.value.trim();if(!text){showMessage("请先在第 1 步生成图片提示词。",false);return}const promptCount=getGeneratedPromptCount();const restore=setButtonLoading(button,"OpenAI 正在生图...");const formData=new FormData();formData.append("prompt_output",text);formData.append("image_count",promptCount);try{const response=await fetch("/api/generate_openai_images",{method:"POST",body:formData}),result=await readJsonResponse(response);showMessage(result.message,result.ok);if(result.data&&result.data.image_files)renderImageList(result.data.image_files);if(result.ok)scrollToStep("step3")}catch(error){showMessage(`OpenAI 生图失败：${error.message}`,false)}finally{restore()}}
+    async function generateLocalImages(){const button=document.getElementById("generateLocalImagesBtn"),text=promptOutputEl.value.trim();if(!text){showMessage("请先在第 1 步生成图片提示词。",false);return}const promptCount=getGeneratedPromptCount();const restore=setButtonLoading(button,"本地模型正在生图...");const formData=new FormData();formData.append("prompt_output",text);formData.append("image_count",promptCount);try{const response=await fetch("/api/generate_local_images",{method:"POST",body:formData}),result=await readJsonResponse(response);showMessage(result.message,result.ok);if(result.data&&result.data.image_files)renderImageList(result.data.image_files);if(result.ok)scrollToStep("step3")}catch(error){showMessage(`本地模型生图失败：${error.message}`,false)}finally{restore()}}
+    async function uploadImages(){const button=document.getElementById("uploadImagesBtn");if(!imageInputEl.files.length){showMessage("请先选择要上传的图片。",false);return}const restore=setButtonLoading(button,"正在上传...");const formData=new FormData();Array.from(imageInputEl.files).forEach(file=>formData.append("images",file));try{const response=await fetch("/api/upload_images",{method:"POST",body:formData}),result=await readJsonResponse(response);showMessage(result.message,result.ok);if(result.data&&result.data.image_files)renderImageList(result.data.image_files);if(result.ok)imageInputEl.value=""}catch(error){showMessage(`上传失败：${error.message}`,false)}finally{restore()}}
+    async function deleteImage(filename){if(!confirm(`确定删除 ${filename} 吗？`))return;const formData=new FormData();formData.append("filename",filename);try{const response=await fetch("/api/delete_image",{method:"POST",body:formData}),result=await readJsonResponse(response);showMessage(result.message,result.ok);if(result.data&&result.data.image_files)renderImageList(result.data.image_files)}catch(error){showMessage(`删除失败：${error.message}`,false)}}
+    async function clearImages(){if(!confirm("确定清空全部图片吗？"))return;try{const response=await fetch("/api/clear_images",{method:"POST"}),result=await readJsonResponse(response);showMessage(result.message,result.ok);if(result.data&&result.data.image_files)renderImageList(result.data.image_files)}catch(error){showMessage(`清空失败：${error.message}`,false)}}
+    async function saveScript(){const button=document.getElementById("saveScriptBtn"),restore=setButtonLoading(button,"正在保存...");const formData=new FormData();formData.append("title",document.getElementById("title").value);formData.append("duration_per_image",document.getElementById("duration_per_image").value);formData.append("subtitles",document.getElementById("subtitles").value);formData.append("voiceover",document.getElementById("voiceover").value);formData.append("tone_label",document.getElementById("tone_label").value);formData.append("video_engine",document.getElementById("video_engine").value);try{const response=await fetch("/api/save_script",{method:"POST",body:formData}),result=await readJsonResponse(response);showMessage(result.message,result.ok)}catch(error){showMessage(`保存失败：${error.message}`,false)}finally{restore()}}
+    async function generateVideo(){const button=document.getElementById("generateVideoBtn");stopProgressTimer();button.disabled=true;button.textContent="生成中，请稍等...";filePanelEl.style.display="none";updateProgress(0,"正在启动生成任务...");const formData=new FormData();formData.append("video_engine",document.getElementById("video_engine").value);try{const response=await fetch("/api/generate_video",{method:"POST",body:formData}),result=await readJsonResponse(response);if(!result.ok){showMessage(result.message,false);updateProgress(0,result.message||"生成启动失败");button.disabled=false;button.textContent="开始生成 final.mp4";return}showMessage(result.message,true);await fetchGenerateProgress();progressTimer=setInterval(fetchGenerateProgress,1000)}catch(error){showMessage(`生成失败：${error.message}`,false);updateProgress(0,`生成失败：${error.message}`);button.disabled=false;button.textContent="开始生成 final.mp4"}}
+    async function fetchGenerateProgress(){try{const response=await fetch("/api/generate_progress"),result=await readJsonResponse(response);if(!result.ok){showMessage(result.message||"读取进度失败。",false);return}const progress=result.data||{};updateProgress(progress.percent,progress.message);if(progress.done){stopProgressTimer();const button=document.getElementById("generateVideoBtn");button.disabled=false;button.textContent="开始生成 final.mp4";if(progress.error){showMessage("生成失败："+progress.error,false)}else{updateProgress(100,"视频生成完成");showMessage("视频生成完成，已保存到历史记录。",true);renderOutputFileInfo(progress.output_file);await refreshOutputFileInfo();await refreshHistory();scrollToStep("step5")}}}catch(error){showMessage(`读取进度失败：${error.message}`,false)}}
+    async function copyPrompts(){const text=promptOutputEl.value.trim();if(!text){showMessage("还没有可复制的提示词，请先在第 1 步生成。",false);return}await copyText(promptOutputEl.value,"提示词已复制。")}async function copyOutputPath(){const text=document.getElementById("outputAbsolutePath").textContent.trim();if(!text){showMessage("还没有可复制的文件路径。",false);return}await copyText(text,"已复制文件路径。")}async function copyDownloadLink(){await copyText(`${window.location.origin}/download`,"已复制下载链接。")}
+    async function copyOutputFile(){const button=document.getElementById("copyOutputFileBtn"),restore=setButtonLoading(button,"正在复制...");const formData=new FormData();formData.append("target_dir",document.getElementById("targetDir").value);try{const response=await fetch("/api/copy_output",{method:"POST",body:formData}),result=await readJsonResponse(response);showMessage(result.message,result.ok);if(result.ok&&result.data.copied_path)await copyText(result.data.copied_path,`已复制到：${result.data.copied_path}，路径也已复制到剪贴板。`)}catch(error){showMessage(`复制失败：${error.message}`,false)}finally{restore()}}
+    async function moveOutputFile(){if(!confirm("移动后 output/final.mp4 将不再保留，确定移动吗？"))return;const button=document.getElementById("moveOutputFileBtn"),restore=setButtonLoading(button,"正在移动...");const formData=new FormData();formData.append("target_dir",document.getElementById("targetDir").value);try{const response=await fetch("/api/move_output",{method:"POST",body:formData}),result=await readJsonResponse(response);showMessage(result.message,result.ok);if(result.ok&&result.data.moved_path){await copyText(result.data.moved_path,`已移动到：${result.data.moved_path}，路径也已复制到剪贴板。`);await refreshOutputFileInfo()}}catch(error){showMessage(`移动失败：${error.message}`,false)}finally{restore()}}
+    document.getElementById("generatePromptsBtn").addEventListener("click",generatePrompts);document.getElementById("generateScriptBtn").addEventListener("click",generateScript);document.getElementById("uploadImagesBtn").addEventListener("click",uploadImages);document.getElementById("copyPromptsBtn").addEventListener("click",copyPrompts);document.getElementById("generateOpenAIImagesBtn").addEventListener("click",generateOpenAIImages);document.getElementById("generateLocalImagesBtn").addEventListener("click",generateLocalImages);document.getElementById("saveScriptBtn").addEventListener("click",saveScript);document.getElementById("generateVideoBtn").addEventListener("click",generateVideo);previewVideoBtn.addEventListener("click",previewVideo);clearImagesBtn.addEventListener("click",clearImages);imageListWrapEl.addEventListener("click",event=>{const button=event.target.closest("[data-delete-image]");if(button)deleteImage(button.dataset.deleteImage)});
+    document.getElementById("localImageCount").addEventListener("input",updatePromptCountNote);document.getElementById("scenes_text").addEventListener("input",()=>{const sceneCount=getSceneCount();if(sceneCount)document.getElementById("localImageCount").value=clampImageCount(sceneCount);updatePromptCountNote()});updatePromptCountNote();renderImageList(currentImageFiles);renderOutputFileInfo({{ output_file | tojson }});refreshStatus();refreshOutputFileInfo();refreshHistory();
+  </script>
 </body>
 </html>
+

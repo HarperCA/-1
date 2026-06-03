@@ -1,0 +1,12 @@
+[submodule "third_party/3d-ken-burns"]
+	path = third_party/3d-ken-burns
+	url = https://github.com/sniklaus/3d-ken-burns.git
+[submodule "third_party/kburns-slideshow"]
+	path = third_party/kburns-slideshow
+	url = https://github.com/Trekky12/kburns-slideshow.git
+[submodule "third_party/Ken-Burns-Slideshow"]
+	path = third_party/Ken-Burns-Slideshow
+	url = https://github.com/changbowen/Ken-Burns-Slideshow.git
+[submodule "third_party/kdenlive_slideshow_editor"]
+	path = third_party/kdenlive_slideshow_editor
+	url = https://github.com/michalfapso/kdenlive_slideshow_editor.git
